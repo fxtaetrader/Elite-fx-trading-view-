@@ -3,325 +3,605 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>TradingView · Fullscreen · Extended</title>
+    <title>TradingView · Full Interface</title>
+    <!-- Font Awesome Icons (clean, professional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-        body { background: #0b1017; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
 
-        /* header – exactly as before, but now with profile icon button */
-        .header {
-            padding: 12px 20px;
+        body {
+            background: #ffffff;        /* white background system */
+            height: 100vh;
             display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: #1e2a3a;
+        }
+
+        /* ----- TOP BAR (header) with icons: profile, replay, settings, fullscreen ----- */
+        .top-bar {
+            background: #f8fafd;
+            border-bottom: 1px solid #dae2ec;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            background: #0f1a24;
-            border-bottom: 1px solid #2a3f54;
+            height: 60px;
+            flex-shrink: 0;
         }
 
-        .logo { font-size: 1.2rem; font-weight: 600; color: #ffb347; letter-spacing: 0.5px; }
-
-        .pair-selector { display: flex; gap: 10px; }
-
-        .pair-btn {
-            background: #16222e;
-            border: 1px solid #3a5670;
-            border-radius: 30px;
-            padding: 6px 16px;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            user-select: none;
-        }
-        .pair-btn.active {
-            background: #1f364d;
-            border-color: #ffb347;
-            color: #ffd966;
-        }
-
-        /* profile icon button (right side of header) */
-        .profile-area { display: flex; align-items: center; }
-        .profile-btn {
-            background: #1e2c3a;
-            border: 1px solid #3f5568;
-            border-radius: 40px;
-            padding: 6px 14px 6px 10px;
+        .logo-area {
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #1e3a5f;
+            letter-spacing: -0.3px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #e0e7ef;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.95rem;
+            gap: 6px;
         }
-        .profile-btn:hover { background: #263b4d; border-color: #ffb347; }
-        .profile-icon { font-size: 1.4rem; line-height: 1; }
-        .profile-arrow { font-size: 0.9rem; opacity: 0.8; }
 
-        /* top axis bar – new row below header (replay, settings, fullscreen) */
-        .top-axis-bar {
-            background: #0f1a24;
-            padding: 6px 20px;
+        .logo-icon {
+            background: #1e3a5f;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .top-icons {
             display: flex;
             align-items: center;
             gap: 20px;
-            border-bottom: 1px solid #1e3347;
-            color: #bdd0e6;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
         }
-        .axis-group {
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            color: #3a4f6c;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 40px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: #e4ebf5;
+            color: #1e3a5f;
+        }
+
+        .icon-btn span {
+            font-size: 0.75rem;
+            position: absolute;
+            bottom: -18px;
+            background: #eef3f9;
+            padding: 2px 6px;
+            border-radius: 30px;
+            color: #2c405c;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.15s;
+            font-weight: 500;
+        }
+
+        .icon-btn:hover span {
+            opacity: 1;
+            bottom: -22px;
+        }
+
+        /* pair selector inline */
+        .pair-badge {
+            background: #edf3fa;
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 1px solid #cbd6e6;
+            color: #1e3a5f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pair-badge i {
+            font-size: 0.8rem;
+            color: #748aa8;
+        }
+
+        /* ----- MAIN LAYOUT: left sidebar + chart container ----- */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        /* Left sidebar (tools) */
+        .left-sidebar {
+            width: 56px;
+            background: #f8fafd;
+            border-right: 1px solid #dae2ec;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            gap: 24px;
+            flex-shrink: 0;
+        }
+
+        .tool-icon {
+            font-size: 1.4rem;
+            color: #3f5a7c;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: 0.15s;
+            position: relative;
+        }
+
+        .tool-icon:hover {
+            background: #e4ebf5;
+            color: #1e3a5f;
+        }
+
+        .tool-icon.active {
+            background: #1e3a5f;
+            color: white;
+        }
+
+        .tool-icon span {
+            position: absolute;
+            left: 48px;
+            background: #1e2f40;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.15s;
+            font-weight: 500;
+            z-index: 100;
+        }
+
+        .tool-icon:hover span {
+            opacity: 1;
+            left: 52px;
+        }
+
+        .sidebar-divider {
+            width: 32px;
+            height: 1px;
+            background: #d0ddeb;
+            margin: 8px 0;
+        }
+
+        /* chart container */
+        .chart-container {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #tv_chart {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        /* ----- MODAL STYLES (settings & profile exactly as images) ----- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.25);
+            backdrop-filter: blur(3px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        /* Settings modal — from first image (CANDLES, DATA MODIFICATION) */
+        .settings-modal {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 30px 50px rgba(0,20,40,0.25);
+            width: 360px;
+            padding: 24px 0 16px 0;
+            border: 1px solid #d8e2f0;
+            color: #142433;
+        }
+
+        .settings-header {
+            padding: 0 24px 20px 24px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #e9eef4;
+            letter-spacing: -0.2px;
+        }
+
+        .settings-section {
+            padding: 18px 24px 12px 24px;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #1e3a5f;
+            margin-bottom: 14px;
+            font-size: 0.95rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #1e3a5f;
+            margin: 0;
+        }
+
+        .data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .data-value {
+            background: #f0f4fa;
+            padding: 4px 14px;
+            border-radius: 40px;
+            color: #1d314a;
+            font-weight: 500;
+            border: 1px solid #ccd9ec;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 24px 8px;
+        }
+
+        .modal-btn {
+            padding: 8px 24px;
+            border-radius: 40px;
+            border: 1px solid #b6c8e0;
+            background: white;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .modal-btn.primary {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+        }
+
+        /* Profile modal — from second image (Tae Trading, Watchlist, user info, theme etc) */
+        .profile-modal {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 30px 50px rgba(0,20,40,0.3);
+            width: 300px;
+            border: 1px solid #dae2f0;
+            overflow: hidden;
+        }
+
+        .profile-item {
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #edf2f9;
+            cursor: pointer;
+            transition: background 0.1s;
+            color: #1f2f43;
+        }
+
+        .profile-item:hover {
+            background: #f2f7ff;
+        }
+
+        .profile-item i {
+            width: 22px;
+            color: #3f5e82;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .profile-item .arrow {
+            margin-left: auto;
+            color: #9bafca;
+            font-size: 0.8rem;
+        }
+
+        .profile-divider {
+            height: 6px;
+            background: #f2f6fc;
+        }
+
+        .user-header {
+            padding: 16px 20px;
+            font-weight: 600;
+            background: #f5f9ff;
+            border-bottom: 1px solid #dde5f0;
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .axis-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: #17212b;
-            padding: 4px 12px;
-            border-radius: 30px;
-            border: 1px solid #2e4560;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .axis-item:hover { background: #1f3243; border-color: #ffb347; }
-        .separator { width: 1px; height: 22px; background: #2a4055; margin: 0 6px; }
 
-        /* chart container takes remaining space */
-        .chart-container {
-            flex: 1;
-            width: 100%;
-            background: #0f1a24;
-            overflow: hidden;
-            position: relative;
-        }
-        #tv_chart {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* hidden modal for double‑tap settings (candle appearance) */
-        .settings-modal {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e2b38;
-            border: 2px solid #3f5e7c;
-            border-radius: 28px;
-            padding: 28px 32px;
+        .user-avatar {
+            background: #1e3a5f;
             color: white;
-            width: 340px;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            z-index: 2000;
-            display: none;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .settings-modal.show { display: flex; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { color: #ffb347; font-weight: 500; letter-spacing: 0.5px; }
-        .close-modal {
-            background: none; border: none; color: #ccc; font-size: 1.8rem; cursor: pointer; line-height: 1;
-        }
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #38536b;
-            padding: 12px 0;
-        }
-        .setting-label { color: #cbdae9; }
-        .setting-value {
-            background: #0b1823;
-            padding: 4px 14px;
+            width: 40px;
+            height: 40px;
             border-radius: 40px;
-            border: 1px solid #3f627c;
-            color: #ffdb9d;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            text-transform: uppercase;
         }
-        .color-dot {
-            display: inline-block;
-            width: 20px; height: 20px;
-            border-radius: 4px;
-            margin-left: 10px;
+
+        /* small check / uncheck simulation */
+        .profile-item .fa-check-circle {
+            color: #1e7e34;
+            margin-left: auto;
+        }
+
+        .fa-circle {
+            font-size: 0.45rem;
             vertical-align: middle;
-            border: 1px solid white;
+            color: #7b98bc;
         }
-        .up-badge { background: #4caf50; }
-        .down-badge { background: #f44336; }
-        .bg-badge { background: #0f1a24; }
-
-        /* overlay for modal */
-        .modal-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1999;
-            display: none;
-        }
-        .modal-overlay.show { display: block; }
-
-        /* left toolbar additions (magnet, delete) are injected via widget settings,
-           but we also add floating helper for extra tools (TradingView left toolbar includes them) */
-        /* we keep original widget left toolbar visible */
     </style>
 </head>
 <body>
-    <!-- Minimal header with profile icon button (upper axis right side) -->
-    <div class="header">
-        <div class="logo">📊 TV CHARTS · PRO</div>
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <div class="pair-selector">
-                <div class="pair-btn active" id="btn-xau" onclick="switchPair('XAUUSD')">XAUUSD</div>
-                <div class="pair-btn" id="btn-btc" onclick="switchPair('BTCUSD')">BTCUSD</div>
+    <!-- Top bar with icons (profile, replay, settings, fullscreen) -->
+    <div class="top-bar">
+        <div class="logo-area">
+            <span class="logo-icon"><i class="fas fa-chart-line"></i></span>
+            <span>FinView</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="pair-badge">
+                XAUUSD <i class="fas fa-chevron-down"></i>
             </div>
-            <!-- profile button (upper axis right) -->
-            <div class="profile-area">
-                <div class="profile-btn" id="profileSettingsBtn">
-                    <span class="profile-icon">👤</span>
-                    <span class="profile-arrow">▼</span>
+            <div class="pair-badge" style="background: white;">
+                BTCUSD
+            </div>
+        </div>
+        <div class="top-icons">
+            <!-- profile icon -->
+            <button class="icon-btn" id="profileIconBtn"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+            <!-- replay icon -->
+            <button class="icon-btn" id="replayIconBtn"><i class="fas fa-play-circle"></i><span>Replay</span></button>
+            <!-- settings icon (calls settings modal) -->
+            <button class="icon-btn" id="settingsIconBtn"><i class="fas fa-sliders-h"></i><span>Settings</span></button>
+            <!-- fullscreen icon -->
+            <button class="icon-btn" id="fullscreenIconBtn"><i class="fas fa-expand"></i><span>Fullscreen</span></button>
+        </div>
+    </div>
+
+    <!-- Main area: left sidebar + chart -->
+    <div class="main-layout">
+        <!-- Left sidebar tools -->
+        <div class="left-sidebar">
+            <!-- drawings icon (with delete all function) -->
+            <div class="tool-icon active" id="drawingsTool"><i class="fas fa-paint-brush"></i><span>Drawings</span></div>
+            <div class="tool-icon" id="deleteAllDrawings"><i class="fas fa-trash-alt"></i><span>Delete all drawings</span></div>
+            <div class="sidebar-divider"></div>
+            <!-- other typical tools (cursor, magnet etc) but keep focus on drawings delete -->
+            <div class="tool-icon"><i class="fas fa-mouse-pointer"></i><span>Cursor</span></div>
+            <div class="tool-icon"><i class="fas fa-magnet"></i><span>Snap to price</span></div>
+        </div>
+
+        <!-- Chart container -->
+        <div class="chart-container">
+            <div id="tv_chart"></div>
+        </div>
+    </div>
+
+    <!-- MODALS (hidden by default) -->
+
+    <!-- 1. Settings modal (exactly from first image) -->
+    <div class="modal-overlay" id="settingsModalOverlay">
+        <div class="settings-modal">
+            <div class="settings-header">Settings</div>
+            <div class="settings-section">
+                <div class="section-title">CANDLES</div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkPrevClose" checked> <label for="chkPrevClose">Color bars based on previous close</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkBody" checked> <label for="chkBody">Body</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkBorders" checked> <label for="chkBorders">Borders</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkWick" checked> <label for="chkWick">Wick</label>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- New top axis bar: replay, chart settings, fullscreen (and extra items) -->
-    <div class="top-axis-bar">
-        <div class="axis-group">
-            <div class="axis-item" id="replayButton">
-                <span>⏯️</span><span>Replay</span>
+            <div class="settings-section">
+                <div class="section-title">DATA MODIFICATION</div>
+                <div class="data-row">
+                    <span>Precision:</span>
+                    <span class="data-value">Default</span>
+                </div>
+                <div class="data-row">
+                    <span>Timezone:</span>
+                    <span class="data-value">(UTC+3) Nairobi</span>
+                </div>
             </div>
-            <div class="axis-item" id="chartSettingsButton">
-                <span>⚙️</span><span>Chart settings</span>
-            </div>
-            <div class="axis-item" id="fullscreenButton">
-                <span>⛶</span><span>Fullscreen</span>
+            <div class="modal-actions">
+                <button class="modal-btn" id="cancelSettings">Cancel</button>
+                <button class="modal-btn primary" id="okSettings">Ok</button>
             </div>
         </div>
-        <!-- extra axis info: can be left empty but we keep it minimal -->
-        <div style="flex:1"></div>
-        <!-- optional indicator that magnet/drawings are on left toolbar (already there) -->
-        <div style="color:#5b7994; font-size:0.8rem">left toolbar: magnet / delete drawing</div>
     </div>
 
-    <!-- Fullscreen TradingView Chart Container -->
-    <div class="chart-container" id="chartContainer">
-        <div id="tv_chart"></div>
+    <!-- 2. Profile modal (exactly from second image) -->
+    <div class="modal-overlay" id="profileModalOverlay">
+        <div class="profile-modal">
+            <!-- Tae Trading section (but we keep original 'Tae Trading' ) -->
+            <div class="profile-item"><i class="fas fa-layer-group"></i> Tae Trading <i class="fas fa-chevron-right arrow"></i></div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="far fa-save"></i> Save layout</div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="fas fa-sync-alt"></i> Autosave <i class="fas fa-check-circle" style="color:#1e7e34;"></i></div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="fas fa-share-alt"></i> Sharing</div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="far fa-copy"></i> Make a copy...</div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="fas fa-i-cursor"></i> Rename...</div>
+            <div class="profile-item" style="padding-left: 44px;"><i class="fas fa-download"></i> Download chart data...</div>
+
+            <div class="profile-divider"></div>
+
+            <div class="profile-item"><i class="fas fa-star"></i> Watchlist</div>
+            <div class="profile-item"><i class="fas fa-bell"></i> Alerts</div>
+            <div class="profile-item"><i class="fas fa-plug"></i> Connect to broker</div>
+
+            <div class="profile-divider"></div>
+
+            <div class="user-header">
+                <span class="user-avatar">AB</span>
+                <span>atwineburellious</span>
+            </div>
+            <div class="profile-item"><i class="fas fa-home"></i> Home</div>
+            <div class="profile-item"><i class="fas fa-question-circle"></i> Help Center</div>
+            <div class="profile-item"><i class="fas fa-bolt"></i> What's new</div>
+
+            <div class="profile-divider"></div>
+
+            <div class="profile-item"><i class="fas fa-moon"></i> Dark theme <i class="fas fa-toggle-off" style="color:#8ba0bc; margin-left:auto;"></i></div>
+            <div class="profile-item"><i class="fas fa-paint-brush"></i> Drawings panel</div>
+            <div class="profile-item">
+                <i class="fas fa-globe"></i> Language
+                <span style="margin-left: auto; display: flex; align-items: center; gap:6px;">
+                    <span class="data-value" style="padding: 2px 12px;">English</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </span>
+            </div>
+
+            <div class="profile-divider"></div>
+            <div class="profile-item"><i class="fas fa-sign-out-alt"></i> Sign out</div>
+        </div>
     </div>
 
-    <!-- Double‑tap settings modal (candle appearance, background etc) -->
-    <div class="modal-overlay" id="modalOverlay"></div>
-    <div class="settings-modal" id="candleSettingsModal">
-        <div class="modal-header">
-            <h3>📈  Candle appearance</h3>
-            <button class="close-modal" id="closeModalBtn">&times;</button>
-        </div>
-        <div class="setting-row">
-            <span class="setting-label">Candle up color</span>
-            <span class="setting-value">green <span class="color-dot up-badge"></span></span>
-        </div>
-        <div class="setting-row">
-            <span class="setting-label">Candle down color</span>
-            <span class="setting-value">red <span class="color-dot down-badge"></span></span>
-        </div>
-        <div class="setting-row">
-            <span class="setting-label">Background</span>
-            <span class="setting-value">dark <span class="color-dot bg-badge"></span></span>
-        </div>
-        <div class="setting-row">
-            <span class="setting-label">Grid lines</span>
-            <span class="setting-value">#2a3f58</span>
-        </div>
-        <div class="setting-row">
-            <span class="setting-label">Body border</span>
-            <span class="setting-value">on</span>
-        </div>
-        <div style="color:#9bb8da; font-size:0.9rem; text-align:center; margin-top:8px;">(demo settings – TradingView style)</div>
-    </div>
-
-    <!-- TradingView Widget Script -->
+    <!-- TradingView script -->
     <script src="https://s3.tradingview.com/tv.js"></script>
     <script>
         (function() {
-            let currentPair = 'XAUUSD';
+            // ---------- TradingView widget init (background white, dark theme set to false? we use light background) ----------
             let tvWidget = null;
-
-            // ---------- helper: init widget with left toolbar extras (magnet & delete drawing are part of drawings toolbar) ----------
-            function initTradingViewWidget(symbol) {
+            function initWidget(symbol = 'XAUUSD') {
                 const container = document.getElementById('tv_chart');
-                // clear previous widget if any
-                if (tvWidget && typeof tvWidget.remove === 'function') {
-                    tvWidget.remove();
-                }
+                if (tvWidget && typeof tvWidget.remove === 'function') tvWidget.remove();
 
                 const tvSymbol = symbol === 'XAUUSD' ? 'FX_IDC:XAUUSD' : 'COINBASE:BTCUSD';
 
-                // TradingView widget config
+                // customize for white background: set theme to 'light'? but TradingView 'light' is bright. we use 'Light' but also override.
                 tvWidget = new TradingView.widget({
                     "width": "100%",
                     "height": "100%",
                     "symbol": tvSymbol,
                     "interval": "15",
                     "timezone": "exchange",
-                    "theme": "dark",
-                    "style": "1",          // candlestick style
+                    "theme": "Light",          // light background
+                    "style": "1",
                     "locale": "en",
-                    "toolbar_bg": "#0f1a24",
+                    "toolbar_bg": "#f8fafd",
                     "enable_publishing": false,
-                    "hide_side_toolbar": false,      // left toolbar visible (includes drawings, magnet, delete etc)
+                    "hide_side_toolbar": true,  // we hide default left toolbar to avoid duplication (our left sidebar is custom)
                     "allow_symbol_change": true,
                     "container_id": "tv_chart",
-                    "studies": [ "MASimple@tv-basicstudies" ],
-                    "disabled_features": ["use_localstorage_for_settings"],
-                    "enabled_features": ["show_hide_button_on_legend"],
-                    // explicitly include magnet (snap to data) and delete drawing tool
-                    "drawings": {
-                        "toolbar": {
-                            "undo": true,
-                            "redo": true,
-                            "snap": true,               // magnet
-                            "delete": true,              // delete drawing
-                            "flip": true,
-                            "filled": true,
-                            "styles": true
-                        }
-                    }
+                    "studies": ["MASimple@tv-basicstudies"],
+                    "disabled_features": ["use_localstorage_for_settings", "left_toolbar"],
+                    "enabled_features": ["show_hide_button_on_legend"]
                 });
-
-                // after widget ready, we can also ensure left toolbar has those tools (they are default)
-                return tvWidget;
             }
 
-            // switch pair
-            window.switchPair = function(pair) {
-                currentPair = pair;
-                document.getElementById('btn-xau').classList.remove('active');
-                document.getElementById('btn-btc').classList.remove('active');
-                document.getElementById(pair === 'XAUUSD' ? 'btn-xau' : 'btn-btc').classList.add('active');
-
-                initTradingViewWidget(pair);
-            };
-
-            // ----- profile settings click (upper axis button) -----
-            document.getElementById('profileSettingsBtn').addEventListener('click', function() {
-                alert('👤 Profile settings – trading preferences, notifications, API keys.\n( demo action )');
+            // switch pair via simple toggle (for demo)
+            document.querySelectorAll('.pair-badge').forEach((badge, idx) => {
+                badge.addEventListener('click', () => {
+                    const isXau = idx === 0; 
+                    initWidget(isXau ? 'XAUUSD' : 'BTCUSD');
+                });
             });
 
-            // ----- replay button action (top axis) -----
-            document.getElementById('replayButton').addEventListener('click', function() {
-                alert('⏯️ Replay mode: bar replay (simulated).\nDrag timeline to replay market movement.');
+            // ---------- Modal logic ----------
+            const settingsOverlay = document.getElementById('settingsModalOverlay');
+            const profileOverlay = document.getElementById('profileModalOverlay');
+
+            // open settings via settings icon (top bar)
+            document.getElementById('settingsIconBtn').addEventListener('click', () => {
+                settingsOverlay.classList.add('show');
             });
 
-            // ----- chart settings button (top axis) – triggers the same modal as double-tap? but we link to modal for consistency -----
-            document.getElementById('chartSettingsButton').addEventListener('click', function() {
-                showSettingsModal();
+            // open profile via profile icon
+            document.getElementById('profileIconBtn').addEventListener('click', () => {
+                profileOverlay.classList.add('show');
             });
 
-            // ----- fullscreen button (top axis) toggle -----
-            document.getElementById('fullscreenButton').addEventListener('click', function() {
-                const container = document.getElementById('chartContainer');
+            // close settings: Cancel / Ok / overlay click
+            document.getElementById('cancelSettings').addEventListener('click', () => {
+                settingsOverlay.classList.remove('show');
+            });
+            document.getElementById('okSettings').addEventListener('click', () => {
+                alert('Settings saved (demo)');
+                settingsOverlay.classList.remove('show');
+            });
+            settingsOverlay.addEventListener('click', (e) => {
+                if (e.target === settingsOverlay) settingsOverlay.classList.remove('show');
+            });
+
+            // close profile: click outside
+            profileOverlay.addEventListener('click', (e) => {
+                if (e.target === profileOverlay) profileOverlay.classList.remove('show');
+            });
+
+            // replay button demo
+            document.getElementById('replayIconBtn').addEventListener('click', () => {
+                alert('Replay mode: drag to replay bars (demo)');
+            });
+
+            // fullscreen
+            document.getElementById('fullscreenIconBtn').addEventListener('click', () => {
+                const container = document.querySelector('.main-layout');
                 if (!document.fullscreenElement) {
                     container.requestFullscreen().catch(err => alert('Fullscreen not supported'));
                 } else {
@@ -329,65 +609,49 @@
                 }
             });
 
-            // ----- double‑tap on chart to open settings (candle appearance) -----
-            const chartDiv = document.getElementById('tv_chart');
-            let lastTap = 0;
-            chartDiv.addEventListener('touchstart', function(e) {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                if (tapLength < 300 && tapLength > 0) {
-                    // double tap detected
-                    e.preventDefault();
-                    showSettingsModal();
+            // delete all drawings (left sidebar)
+            document.getElementById('deleteAllDrawings').addEventListener('click', () => {
+                if (tvWidget && tvWidget.chart) {
+                    // TradingView API: remove all drawings
+                    tvWidget.chart().getAllShapes().then(shapes => {
+                        shapes.forEach(shape => tvWidget.chart().removeEntity(shape.id));
+                    });
+                    alert('All drawings cleared');
+                } else {
+                    alert('Demo: drawings would be cleared (widget not fully ready)');
                 }
-                lastTap = currentTime;
             });
 
-            // also double-click for mouse users
-            chartDiv.addEventListener('dblclick', function(e) {
-                e.preventDefault();
-                showSettingsModal();
+            // drawings tool click (activate drawing mode simulation)
+            document.getElementById('drawingsTool').addEventListener('click', () => {
+                alert('Drawings tool activated (use toolbar to draw)');
             });
 
-            // settings modal functions
-            const modal = document.getElementById('candleSettingsModal');
-            const overlay = document.getElementById('modalOverlay');
-            function showSettingsModal() {
-                modal.classList.add('show');
-                overlay.classList.add('show');
-            }
-            function hideSettingsModal() {
-                modal.classList.remove('show');
-                overlay.classList.remove('show');
-            }
-
-            document.getElementById('closeModalBtn').addEventListener('click', hideSettingsModal);
-            overlay.addEventListener('click', hideSettingsModal);
-
-            // also setting rows can be "clickable" to simulate color change
-            document.querySelectorAll('.setting-value').forEach(el => {
-                el.addEventListener('click', function() {
-                    alert('TradingView style: color picker would open.\n(demo)');
+            // also wire profile items (just demo actions)
+            document.querySelectorAll('.profile-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.profile-item')) {
+                        // don't close modal for everything, just demo
+                        const text = item.innerText.slice(0, 30);
+                        alert(`Profile action: ${text} (demo)`);
+                    }
                 });
             });
 
-            // ---------- initialize ----------
-            window.onload = function() {
-                initTradingViewWidget('XAUUSD');
-            };
+            // initial widget
+            initWidget('XAUUSD');
 
-            // resize handling
-            window.addEventListener('resize', function() {
-                if (tvWidget && tvWidget.resize) {
-                    tvWidget.resize();
-                }
-            });
-
-            // optional: ensure magnet & delete are present (already enabled via drawings toolbar)
+            // resize
+            window.addEventListener('resize', () => tvWidget?.resize?.());
         })();
     </script>
-
-    <!-- tiny style: left toolbar (TradingView native) will show magnet icon as "snap" when drawing tool active. we also added delete. 
-         also simulate that left toolbar contains them. -->
+    <!-- ensure background white, also chart container white -->
+    <style>
+        body, .main-layout, .chart-container { background: #ffffff; }
+        .profile-item .fa-toggle-off { color: #a5b9d4; }
+        .profile-item .fa-check-circle { color: #1e7e34; }
+        .modal-overlay { background: rgba(255,255,255,0.7); }
+    </style>
 </body>
-    </html>
+</html>
+```
