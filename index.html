@@ -1,169 +1,585 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trading Interface</title>
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #0e0e0e;
-      color: #ffffff;
-    }.container {
-  display: flex;
-  height: 100vh;
-  flex-direction: column;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Bar Replay Engine · Lightweight Charts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* better UI feel for buttons */
+        }
 
-.top-bar {
-  height: 50px;
-  background: #1a1a1a;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  gap: 10px;
-}
+        body {
+            background: #0a0f1a;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-.top-bar button {
-  background: #2b2b2b;
-  border: none;
-  color: white;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
+        /* replay header / control panel */
+        .replay-panel {
+            background: #11161f;
+            border-bottom: 1px solid #2a2f3a;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+        }
 
-.main {
-  display: flex;
-  flex: 1;
-}
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-.sidebar {
-  width: 60px;
-  background: #1a1a1a;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 10px;
-  gap: 10px;
-}
+        .replay-icon {
+            background: #1e2a3a;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #ffb347;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-.sidebar button {
-  width: 40px;
-  height: 40px;
-  background: #2b2b2b;
-  border: none;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
+        .replay-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: #ffb347;
+            stroke-width: 2;
+        }
 
-.chart-container {
-  flex: 1;
-  position: relative;
-}
+        .controls {
+            display: flex;
+            gap: 12px;
+            background: #0f141c;
+            padding: 5px 12px;
+            border-radius: 60px;
+            border: 1px solid #2a3342;
+        }
 
-#chart {
-  width: 100%;
-  height: 100%;
-}
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 40px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
 
-.footer {
-  height: 30px;
-  background: #1a1a1a;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-size: 12px;
-  color: #aaa;
-}
+        .ctrl-btn:hover {
+            background: #2a3a4a;
+            color: #ffb347;
+        }
 
-  </style>
+        .ctrl-btn:active {
+            transform: scale(0.96);
+        }
+
+        .ctrl-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(0.2);
+        }
+
+        .speed-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #0f141c;
+            padding: 5px 16px;
+            border-radius: 40px;
+            border: 1px solid #2a3342;
+        }
+
+        .speed-slider-container label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #9aa6b5;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="range"] {
+            width: 160px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #2a3a4a;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffb347;
+            cursor: pointer;
+            box-shadow: 0 0 3px #ffb347aa;
+            border: none;
+        }
+
+        #speedValue {
+            min-width: 55px;
+            background: #1e2a32;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #ffd966;
+            text-align: center;
+        }
+
+        .status-badge {
+            background: #1a232f;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #b9c7d9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-led {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #2ecc71;
+            box-shadow: 0 0 4px #2ecc71;
+            transition: background 0.1s;
+        }
+
+        .status-led.paused {
+            background: #f39c12;
+            box-shadow: 0 0 4px #f39c12;
+        }
+
+        .status-led.stopped {
+            background: #7f8c8d;
+        }
+
+        .split-info {
+            font-family: monospace;
+            font-size: 0.7rem;
+            background: #00000030;
+            padding: 4px 10px;
+            border-radius: 30px;
+            letter-spacing: 0.3px;
+        }
+
+        /* chart container full flex */
+        .chart-wrapper {
+            flex: 1;
+            width: 100%;
+            background: #0a0f1a;
+            position: relative;
+            min-height: 0;
+        }
+
+        #chartContainer {
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 680px) {
+            .replay-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .controls, .speed-slider-container {
+                justify-content: center;
+            }
+            .brand {
+                justify-content: space-between;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="top-bar">
-      <button onclick="loadData()">Load Data</button>
-      <button onclick="toggleTheme()">Toggle Theme</button>
-      <span>Trading Dashboard</span>
-    </div><div class="main">
-  <div class="sidebar">
-    <button title="Crosshair">+</button>
-    <button title="Line">/</button>
-    <button title="Draw">✏️</button>
-    <button title="Settings">⚙️</button>
-  </div>
 
-  <div class="chart-container">
-    <div id="chart"></div>
-  </div>
+<div class="replay-panel">
+    <div class="brand">
+        <div class="replay-icon">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v4l5-4-5-4v4zM4 12h16M12 4v16" stroke="currentColor" />
+                <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none"/>
+                <path d="M8 12l4-4 4 4-4 4z" stroke="currentColor" fill="none"/>
+            </svg>
+            <span>BAR REPLAY ENGINE</span>
+        </div>
+        <div class="split-info" id="splitInfoDisplay">Split index: 80 / 200</div>
+    </div>
+
+    <div class="controls">
+        <button class="ctrl-btn" id="playBtn" title="Play Replay">▶ Play</button>
+        <button class="ctrl-btn" id="pauseBtn" title="Pause">⏸ Pause</button>
+        <button class="ctrl-btn" id="stepBtn" title="Step Forward">⏩ Step</button>
+        <button class="ctrl-btn" id="resetBtn" title="Reset to Split Index">⟳ Reset</button>
+    </div>
+
+    <div class="speed-slider-container">
+        <label>⚡ Speed</label>
+        <input type="range" id="speedSlider" min="100" max="2000" step="20" value="600">
+        <span id="speedValue">600 ms</span>
+    </div>
+
+    <div class="status-badge">
+        <div class="status-led" id="statusLed"></div>
+        <span id="statusText">Ready</span>
+    </div>
 </div>
 
-<div class="footer">
-  Status: Ready
+<div class="chart-wrapper">
+    <div id="chartContainer"></div>
 </div>
 
-  </div>  <script>
-    const chartContainer = document.getElementById('chart');
+<!-- TradingView Lightweight Charts CDN -->
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 
-    const chart = LightweightCharts.createChart(chartContainer, {
-      layout: {
-        background: { color: '#0e0e0e' },
-        textColor: '#ffffff'
-      },
-      grid: {
-        vertLines: { color: '#2a2a2a' },
-        horzLines: { color: '#2a2a2a' }
-      },
-      width: chartContainer.clientWidth,
-      height: chartContainer.clientHeight
-    });
+<script>
+    // --------------------------------------------------------------
+    // 1. HISTORICAL OHLCV DATA (realistic synthetic intraday data)
+    //    Base: 200 candles (XAUUSD-like movement)
+    // --------------------------------------------------------------
+    const generateHistoricalData = () => {
+        let basePrice = 1920.50;
+        const data = [];
+        let timestamp = new Date(2024, 0, 15, 8, 0, 0).getTime() / 1000; // unix seconds
+        for (let i = 0; i < 200; i++) {
+            const variation = (Math.random() - 0.5) * 6.5;
+            const open = basePrice;
+            const close = +(basePrice + variation).toFixed(2);
+            const high = Math.max(open, close) + Math.random() * 3.2;
+            const low = Math.min(open, close) - Math.random() * 3.2;
+            const volume = Math.floor(1200 + Math.random() * 3800);
+            data.push({
+                time: timestamp,
+                open: +open.toFixed(2),
+                high: +high.toFixed(2),
+                low: +low.toFixed(2),
+                close: +close.toFixed(2),
+                volume: volume,
+            });
+            basePrice = close;
+            timestamp += 3600; // 1 hour increments
+        }
+        return data;
+    };
 
-    const candleSeries = chart.addCandlestickSeries();
-
-    function generateSampleData() {
-      const data = [];
-      let time = Math.floor(Date.now() / 1000) - 5000;
-      let price = 100;
-
-      for (let i = 0; i < 200; i++) {
-        const open = price;
-        const close = open + (Math.random() - 0.5) * 2;
-        const high = Math.max(open, close) + Math.random();
-        const low = Math.min(open, close) - Math.random();
-
-        data.push({
-          time: time + i * 60,
-          open,
-          high,
-          low,
-          close
+    const fullData = generateHistoricalData();
+    const TOTAL_BARS = fullData.length;
+    
+    // DEFAULT SPLIT INDEX = user start point (first 80 bars displayed initially)
+    let splitIndex = 80;          // display data up to this index (0-based)
+    let currentReplayIndex = splitIndex;   // next bar to add (the bar after last visible)
+    let replayInterval = null;
+    let isPlaying = false;
+    let currentSpeedMs = 600;
+    
+    // chart instances
+    let chart = null;
+    let candlestickSeries = null;
+    let volumeSeries = null;
+    let smaSeries = null;      // Simple Moving Average (SMA) line series
+    let rsiSeries = null;      // RSI line series (separate pane)
+    
+    // We'll maintain the displayed data list (visible bars) separately
+    let displayedBars = [];     // stores objects {time, open, high, low, close, volume}
+    
+    // Helper: compute SMA (period 14) based on closing prices of displayed bars
+    function computeSMA(dataBars, period = 14) {
+        if (dataBars.length < period) return [];
+        const smaValues = [];
+        for (let i = period - 1; i < dataBars.length; i++) {
+            let sum = 0;
+            for (let j = i - period + 1; j <= i; j++) {
+                sum += dataBars[j].close;
+            }
+            const sma = sum / period;
+            smaValues.push({
+                time: dataBars[i].time,
+                value: sma,
+            });
+        }
+        return smaValues;
+    }
+    
+    // Compute RSI (period 14) based on close prices
+    function computeRSI(dataBars, period = 14) {
+        if (dataBars.length < period + 1) return [];
+        const rsiValues = [];
+        let gains = 0, losses = 0;
+        // initial average gain/loss
+        for (let i = 1; i <= period; i++) {
+            const change = dataBars[i].close - dataBars[i-1].close;
+            if (change >= 0) gains += change;
+            else losses += Math.abs(change);
+        }
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        let rs = avgGain / avgLoss;
+        let rsi = 100 - (100 / (1 + rs));
+        rsiValues.push({ time: dataBars[period].time, value: rsi });
+        
+        for (let i = period + 1; i < dataBars.length; i++) {
+            const change = dataBars[i].close - dataBars[i-1].close;
+            let currentGain = change > 0 ? change : 0;
+            let currentLoss = change < 0 ? Math.abs(change) : 0;
+            avgGain = (avgGain * (period - 1) + currentGain) / period;
+            avgLoss = (avgLoss * (period - 1) + currentLoss) / period;
+            rs = avgGain / avgLoss;
+            rsi = 100 - (100 / (1 + rs));
+            rsiValues.push({ time: dataBars[i].time, value: rsi });
+        }
+        return rsiValues;
+    }
+    
+    // Update all series based on displayedBars array
+    function refreshAllIndicatorsAndSeries() {
+        if (!candlestickSeries) return;
+        
+        // update candlestick data
+        const candleData = displayedBars.map(bar => ({
+            time: bar.time,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+        }));
+        candlestickSeries.setData(candleData);
+        
+        // update volume series
+        const volData = displayedBars.map(bar => ({
+            time: bar.time,
+            value: bar.volume,
+            color: bar.close >= bar.open ? '#4caf50aa' : '#f44336aa',
+        }));
+        volumeSeries.setData(volData);
+        
+        // SMA calculation (period 14)
+        const smaPoints = computeSMA(displayedBars, 14);
+        if (smaPoints.length) {
+            smaSeries.setData(smaPoints);
+        } else {
+            smaSeries.setData([]);
+        }
+        
+        // RSI calculation (period 14)
+        const rsiPoints = computeRSI(displayedBars, 14);
+        if (rsiPoints.length) {
+            rsiSeries.setData(rsiPoints);
+        } else {
+            rsiSeries.setData([]);
+        }
+        
+        // optional: fit content if we want auto scaling
+        chart.timeScale().fitContent();
+    }
+    
+    // Reset chart to initial split state (render only bars up to splitIndex)
+    function resetToSplit() {
+        if (isPlaying) stopPlayback();
+        // set currentReplayIndex to splitIndex (next bar to add is splitIndex)
+        currentReplayIndex = splitIndex;
+        // build displayedBars array from fullData[0 .. splitIndex-1] (since splitIndex is count of visible bars)
+        displayedBars = fullData.slice(0, splitIndex);
+        refreshAllIndicatorsAndSeries();
+        updateUIStatus(false, false);
+        updateSplitInfoDisplay();
+        // clear any pending interval
+        if (replayInterval) {
+            clearInterval(replayInterval);
+            replayInterval = null;
+        }
+        isPlaying = false;
+    }
+    
+    // Step forward: add next bar from fullData if available
+    function stepForward() {
+        if (currentReplayIndex < TOTAL_BARS) {
+            const nextBar = fullData[currentReplayIndex];
+            displayedBars.push(nextBar);
+            currentReplayIndex++;
+            refreshAllIndicatorsAndSeries();
+            updateSplitInfoDisplay();
+            
+            // if after step we reached the end, auto-pause if playing
+            if (currentReplayIndex === TOTAL_BARS && isPlaying) {
+                stopPlayback();
+                updateUIStatus(false, true); // end of data
+            }
+            return true;
+        } else {
+            // no more bars
+            if (isPlaying) stopPlayback();
+            updateUIStatus(false, true);
+            return false;
+        }
+    }
+    
+    // Playback engine: repeatedly step forward at defined speed
+    function startPlayback() {
+        if (isPlaying) return;
+        if (currentReplayIndex >= TOTAL_BARS) {
+            // if already at end, show info but do not start
+            updateUIStatus(false, true);
+            return;
+        }
+        isPlaying = true;
+        if (replayInterval) clearInterval(replayInterval);
+        replayInterval = setInterval(() => {
+            if (!isPlaying) return;
+            if (currentReplayIndex < TOTAL_BARS) {
+                stepForward();
+                // after stepping, check if we've reached the end
+                if (currentReplayIndex === TOTAL_BARS) {
+                    // end of dataset: stop automatically
+                    stopPlayback();
+                    updateUIStatus(false, true);
+                }
+            } else {
+                // finished
+                stopPlayback();
+                updateUIStatus(false, true);
+            }
+        }, currentSpeedMs);
+        updateUIStatus(true, false);
+    }
+    
+    function stopPlayback() {
+        if (replayInterval) {
+            clearInterval(replayInterval);
+            replayInterval = null;
+        }
+        isPlaying = false;
+        updateUIStatus(false, false);
+    }
+    
+    function pausePlayback() {
+        if (replayInterval) {
+            clearInterval(replayInterval);
+            replayInterval = null;
+        }
+        isPlaying = false;
+        updateUIStatus(false, false);
+    }
+    
+    // UI updates: status led, text, and button states
+    function updateUIStatus(playing, isFinished = false) {
+        const statusLed = document.getElementById('statusLed');
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        if (playing) {
+            statusLed.className = 'status-led';
+            statusLed.style.background = '#2ecc71';
+            statusText.innerText = '▶ Playing...';
+        } else if (isFinished || currentReplayIndex >= TOTAL_BARS) {
+            statusLed.className = 'status-led stopped';
+            statusLed.style.background = '#7f8c8d';
+            statusText.innerText = '⏹️ End of Data';
+        } else {
+            statusLed.className = 'status-led paused';
+            statusLed.style.background = '#f39c12';
+            statusText.innerText = '⏸ Paused / Ready';
+        }
+        
+        // Disable play if at end of data
+        if (currentReplayIndex >= TOTAL_BARS) {
+            playBtn.classList.add('disabled');
+            stepBtn.classList.add('disabled');
+        } else {
+            playBtn.classList.remove('disabled');
+            stepBtn.classList.remove('disabled');
+        }
+        
+        if (playing) {
+            pauseBtn.classList.remove('disabled');
+            playBtn.classList.add('disabled');
+        } else {
+            pauseBtn.classList.remove('disabled');
+            if (currentReplayIndex < TOTAL_BARS) playBtn.classList.remove('disabled');
+        }
+        
+        // reset is always active
+        resetBtn.classList.remove('disabled');
+    }
+    
+    function updateSplitInfoDisplay() {
+        const splitSpan = document.getElementById('splitInfoDisplay');
+        const visibleCount = displayedBars.length;
+        splitSpan.innerHTML = `📊 Bars: ${visibleCount} / ${TOTAL_BARS}  |  Split index: ${splitIndex}  |  Next: ${currentReplayIndex >= TOTAL_BARS ? 'END' : currentReplayIndex+1}`;
+    }
+    
+    // Speed slider handler
+    function initSpeedSlider() {
+        const slider = document.getElementById('speedSlider');
+        const speedSpan = document.getElementById('speedValue');
+        slider.addEventListener('input', (e) => {
+            currentSpeedMs = parseInt(e.target.value, 10);
+            speedSpan.innerText = currentSpeedMs + ' ms';
+            if (isPlaying) {
+                // restart interval with new speed
+                if (replayInterval) {
+                    clearInterval(replayInterval);
+                    replayInterval = setInterval(() => {
+                        if (!isPlaying) return;
+                        if (currentReplayIndex < TOTAL_BARS) {
+                            stepForward();
+                            if (currentReplayIndex === TOTAL_BARS) {
+                                stopPlayback();
+                                updateUIStatus(false, true);
+                            }
+                        } else {
+                            stopPlayback();
+                            updateUIStatus(false, true);
+                        }
+                    }, currentSpeedMs);
+                }
+            }
         });
-
-        price = close;
-      }
-
-      return data;
     }
-
-    function loadData() {
-      const data = generateSampleData();
-      candleSeries.setData(data);
-    }
-
-    function toggleTheme() {
-      alert("Theme toggle placeholder (extend this)");
-    }
-
-    window.addEventListener('resize', () => {
-      chart.applyOptions({
-        width: chartContainer.clientWidth,
-        height: chartContainer.clientHeight
-      });
-    });
-
-    // Initial load
-    loadData();
-  </script></body>
-</html>
+    
+    // let user adjust split index? We'll add a hidden control but for UX we add a simple prompt? 
+    // but requirements said "Split Index (the user-selected start point)". We'll implement using a small hidden double-click feature?
+    // Better: add a small UI to set split index directly (nice to have). I'll add a silent control: double-click splitInfo to change.
+    function enableSplitSelector() {
+        const splitDisplay = document.getElementById('splitInfoDisplay');
+        splitDisplay.style.cursor = 'pointer';
+        splitDisplay.title = 'Double-click to set new Split Index (1 to ' + (TOTAL_BARS-1) + ')';
+        splitDisplay.addEventListener('dblclick', () => {
+            let newSplit = prompt(`Set Split Index (visible bars count) [1..${TOTAL_BARS-1}]:`, splitIndex);
+            if (newSplit !== null) {
+                let newVal = parseInt(newSplit, 10);
+                if (!isNaN(newVal) && newVal >= 1 && newVal <= TOTAL_BARS - 1) {
+                    splitIndex = newVal;
+                    if (currentReplayIndex > splitInd
