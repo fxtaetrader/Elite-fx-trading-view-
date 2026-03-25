@@ -69,30 +69,31 @@
         
         /* Custom replay button styling - will be injected into TradingView toolbar */
         .tv-custom-replay-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            margin: 0 2px;
-            transition: all 0.2s ease;
-            position: relative;
-            color: #b2b5be;
-            font-size: 18px;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 4px !important;
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer !important;
+            margin: 0 2px !important;
+            transition: all 0.2s ease !important;
+            position: relative !important;
+            color: #b2b5be !important;
+            font-size: 18px !important;
+            vertical-align: middle !important;
         }
         
         .tv-custom-replay-btn:hover {
-            background: #2a2e39;
-            color: #ffb347;
+            background: #2a2e39 !important;
+            color: #ffb347 !important;
         }
         
         .tv-custom-replay-btn.active {
-            color: #ffb347;
-            background: #2a2e39;
+            color: #ffb347 !important;
+            background: #2a2e39 !important;
         }
         
         .tv-custom-replay-btn.active::after {
@@ -138,17 +139,6 @@
         .tv-custom-replay-btn:hover::before {
             opacity: 1;
         }
-        
-        /* Make sure the camera icon stays accessible - no overlapping */
-        .tv-custom-replay-btn {
-            order: 10;
-        }
-        
-        /* Ensure toolbar items are properly spaced */
-        .group-UJoUyYaU {
-            display: flex;
-            align-items: center;
-        }
     </style>
 </head>
 <body>
@@ -174,6 +164,7 @@
         let replayActive = false;
         let replayInterval = null;
         let replayButtonInjected = false;
+        let injectionAttempts = 0;
         
         // Helper to get the chart instance from widget
         function getChart() {
@@ -183,81 +174,103 @@
             return null;
         }
         
-        // Inject replay button into TradingView's toolbar (near indicators area)
-        function injectReplayButton() {
-            if (replayButtonInjected) return;
+        // Find the best spot to insert replay button - near indicators and camera
+        function findToolbarContainer() {
+            // Method 1: Look for the right-side toolbar container by common TradingView class patterns
+            const possibleSelectors = [
+                '.items-3XjXGrrQ',
+                '.buttons-3XjXGrrQ',
+                '[class*="toolbar-widget"]',
+                '[class*="top-toolbar"]',
+                '[class*="chart-toolbar"]',
+                '.group-3XjXGrrQ',
+                '.right-3XjXGrrQ',
+                '[class*="right-toolbar"]'
+            ];
             
-            // Wait for TradingView toolbar to be available
-            const checkToolbar = setInterval(() => {
-                // Look for the toolbar container - TradingView uses specific classes
-                // We want to insert near the indicators/studies section
-                const toolbarContainer = document.querySelector('[class*="toolbar"]') || 
-                                        document.querySelector('[class*="buttons-"]') ||
-                                        document.querySelector('.group-UJoUyYaU');
-                
-                // More specific: look for the right-side toolbar group where indicators and camera live
-                const rightToolbarGroup = document.querySelector('[class*="right-"]') ||
-                                         document.querySelector('[class*="items-"]');
-                
-                // Find the container that holds the indicator button and camera
-                let targetContainer = null;
-                
-                // Try to find the group that contains the camera/snapshot button
-                const allToolbarGroups = document.querySelectorAll('[class*="group"]');
-                for (let group of allToolbarGroups) {
-                    if (group.querySelector('[class*="camera"]') || 
-                        group.querySelector('[class*="snapshot"]') ||
-                        group.innerHTML.includes('camera') ||
-                        group.innerHTML.includes('snapshot')) {
-                        targetContainer = group;
-                        break;
-                    }
+            for (let selector of possibleSelectors) {
+                const el = document.querySelector(selector);
+                if (el && el.children && el.children.length > 0) {
+                    return el;
                 }
-                
-                // If not found by camera, look for any visible toolbar group on the right side
-                if (!targetContainer) {
-                    const rightSideElements = document.querySelectorAll('[class*="right"], [class*="end"]');
-                    for (let el of rightSideElements) {
-                        if (el.children && el.children.length > 0 && el.offsetParent !== null) {
-                            targetContainer = el;
-                            break;
+            }
+            
+            // Method 2: Find any container that has buttons and is visible on the top right
+            const allDivs = document.querySelectorAll('div');
+            for (let div of allDivs) {
+                if (div.children && div.children.length > 0) {
+                    // Check if this div contains icon buttons (like indicators, camera)
+                    const hasButtons = Array.from(div.children).some(child => 
+                        child.tagName === 'BUTTON' || 
+                        child.querySelector('button') ||
+                        child.innerHTML.includes('camera') ||
+                        child.innerHTML.includes('indicator')
+                    );
+                    if (hasButtons && div.offsetParent !== null) {
+                        const rect = div.getBoundingClientRect();
+                        // Top right area of the screen
+                        if (rect.top < 100 && rect.right > window.innerWidth - 200) {
+                            return div;
                         }
                     }
                 }
-                
-                // Fallback: use the main toolbar area
-                if (!targetContainer && toolbarContainer) {
-                    targetContainer = toolbarContainer;
-                }
-                
-                if (targetContainer && !document.getElementById('tv-replay-injected-btn')) {
-                    // Create replay button
-                    const replayBtn = document.createElement('button');
-                    replayBtn.id = 'tv-replay-injected-btn';
-                    replayBtn.className = 'tv-custom-replay-btn';
-                    replayBtn.setAttribute('data-tooltip', 'Replay Mode - Step through bars');
-                    replayBtn.innerHTML = '⏪';
-                    replayBtn.onclick = toggleReplayMode;
-                    
-                    // Insert before the camera/indicator area, not after
-                    // This ensures camera icon remains accessible
-                    const firstChild = targetContainer.firstChild;
-                    if (firstChild) {
-                        targetContainer.insertBefore(replayBtn, firstChild);
-                    } else {
-                        targetContainer.appendChild(replayBtn);
-                    }
-                    
-                    replayButtonInjected = true;
-                    clearInterval(checkToolbar);
-                    console.log("Replay button injected into TradingView toolbar");
-                } else if (targetContainer && document.getElementById('tv-replay-injected-btn')) {
-                    clearInterval(checkToolbar);
-                }
-            }, 500);
+            }
             
-            // Timeout after 10 seconds to stop checking
-            setTimeout(() => clearInterval(checkToolbar), 10000);
+            return null;
+        }
+        
+        // Inject replay button into TradingView's toolbar (near indicators/camera area)
+        function injectReplayButton() {
+            if (replayButtonInjected) {
+                // Check if button still exists, if not, reinject
+                if (!document.getElementById('tv-replay-injected-btn')) {
+                    replayButtonInjected = false;
+                } else {
+                    return;
+                }
+            }
+            
+            injectionAttempts++;
+            if (injectionAttempts > 20) {
+                console.warn("Could not inject replay button after multiple attempts");
+                return;
+            }
+            
+            const targetContainer = findToolbarContainer();
+            
+            if (targetContainer && !document.getElementById('tv-replay-injected-btn')) {
+                // Create replay button
+                const replayBtn = document.createElement('button');
+                replayBtn.id = 'tv-replay-injected-btn';
+                replayBtn.className = 'tv-custom-replay-btn';
+                replayBtn.setAttribute('data-tooltip', 'Replay Mode - Step through bars');
+                replayBtn.innerHTML = '⏪';
+                replayBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleReplayMode();
+                };
+                
+                // Insert at the beginning of the toolbar so it doesn't cover camera
+                if (targetContainer.firstChild) {
+                    targetContainer.insertBefore(replayBtn, targetContainer.firstChild);
+                } else {
+                    targetContainer.appendChild(replayBtn);
+                }
+                
+                replayButtonInjected = true;
+                console.log("Replay button injected into TradingView toolbar");
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // Continuously try to inject until successful
+        function waitAndInject() {
+            if (injectReplayButton()) {
+                return;
+            }
+            setTimeout(waitAndInject, 1000);
         }
         
         // Update replay button active state
@@ -388,8 +401,9 @@
             // Stop any active replay
             stopReplayAndCleanup();
             
-            // Reset injection flag for new widget
+            // Reset injection flag and attempts
             replayButtonInjected = false;
+            injectionAttempts = 0;
             
             // Map symbols to TradingView format
             const tvSymbol = symbol === 'XAUUSD' ? 'FX_IDC:XAUUSD' : 'COINBASE:BTCUSD';
@@ -439,32 +453,26 @@
                 "chart_only": false                    // Show full toolbar with camera
             });
             
-            // After chart loads, inject replay button and ensure chart is fully interactive
+            // After chart loads, inject replay button
             tvWidget.onChartReady(() => {
-                // Inject replay button into toolbar near indicators
-                injectReplayButton();
+                console.log("Chart ready, injecting replay button...");
+                // Start injection process
+                setTimeout(() => {
+                    waitAndInject();
+                }, 1000);
                 
-                // Make sure the chart is fully interactive - axis can be moved, camera is accessible
-                const chart = getChart();
-                if (chart) {
-                    console.log("Chart ready - Camera icon available in toolbar, axis fully movable, replay button injected near indicators");
-                }
-                
-                // Watch for DOM changes to re-inject if needed (for TradingView dynamic updates)
-                const observer = new MutationObserver(() => {
-                    if (!document.getElementById('tv-replay-injected-btn') && tvWidget) {
-                        injectReplayButton();
+                // Also try after a few more seconds
+                setTimeout(() => {
+                    if (!replayButtonInjected) {
+                        waitAndInject();
                     }
-                });
+                }, 3000);
                 
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
-                
-                // Store observer to disconnect later
-                if (window._tvObserver) window._tvObserver.disconnect();
-                window._tvObserver = observer;
+                setTimeout(() => {
+                    if (!replayButtonInjected) {
+                        waitAndInject();
+                    }
+                }, 5000);
             });
         }
         
@@ -504,9 +512,6 @@
             if (replayInterval) {
                 clearInterval(replayInterval);
             }
-            if (window._tvObserver) {
-                window._tvObserver.disconnect();
-            }
             if (tvWidget && typeof tvWidget.remove === 'function') {
                 try {
                     tvWidget.remove();
@@ -515,7 +520,7 @@
         });
         
         // Export for debugging
-        window.getReplayStatus = () => ({ active: replayActive });
+        window.getReplayStatus = () => ({ active: replayActive, injected: replayButtonInjected });
     </script>
 </body>
-</html>
+    </html>
