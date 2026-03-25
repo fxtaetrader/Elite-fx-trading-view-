@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>TradingView · Fullscreen with Replay</title>
+    <title>TradingView · Fullscreen</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -22,17 +22,12 @@
             align-items: center;
             background: #0f1a24;
             border-bottom: 1px solid #2a3f54;
-            position: relative;
-            z-index: 10;
         }
         
         .logo { 
             font-size: 1.2rem; 
             font-weight: 600; 
             color: #ffb347;
-            display: flex;
-            align-items: center;
-            gap: 12px;
         }
         
         .pair-selector {
@@ -57,37 +52,6 @@
             color: #ffd966;
         }
         
-        /* Replay Icon Button - positioned near indicators area */
-        .replay-icon-btn {
-            background: #16222e;
-            border: 1px solid #3a5670;
-            border-radius: 30px;
-            padding: 6px 16px;
-            color: #ffb347;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            margin-left: 15px;
-        }
-        
-        .replay-icon-btn:hover {
-            background: #1f364d;
-            border-color: #ffb347;
-            transform: scale(1.02);
-        }
-        
-        .replay-icon-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: #ffb347;
-            stroke-width: 1.8;
-            fill: none;
-        }
-        
         /* Fullscreen chart container */
         .chart-container {
             flex: 1;
@@ -102,305 +66,351 @@
             height: 100%;
         }
         
-        /* REPLAY MODAL OVERLAY - appears when replay icon is clicked */
-        .replay-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+        /* Custom replay button overlay - positioned near indicator area (top right corner of chart) */
+        .replay-control {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 100;
+            background: rgba(21, 34, 46, 0.9);
             backdrop-filter: blur(8px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-        }
-        
-        .replay-modal.active {
-            display: flex;
-        }
-        
-        .replay-panel {
-            background: #0f1a24;
-            border-radius: 20px;
-            border: 1px solid #2a3f54;
-            width: 90%;
-            max-width: 1300px;
-            height: 85vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        
-        .replay-header {
-            padding: 16px 24px;
-            background: #0a121c;
-            border-bottom: 1px solid #2a3f54;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        
-        .replay-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #ffb347;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        
-        .replay-title svg {
-            width: 22px;
-            height: 22px;
-            stroke: #ffb347;
-        }
-        
-        .close-modal {
-            background: #1e2a36;
-            border: none;
-            color: #9aaebf;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 6px 14px;
-            border-radius: 30px;
-            transition: 0.2s;
-        }
-        
-        .close-modal:hover {
-            background: #2a3f54;
-            color: white;
-        }
-        
-        /* Replay Controls */
-        .replay-controls {
-            padding: 12px 20px;
-            background: #0f1a24;
-            border-bottom: 1px solid #2a3f54;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        
-        .ctrl-group {
-            display: flex;
-            gap: 10px;
-            background: #0a121c;
-            padding: 5px 12px;
-            border-radius: 50px;
-            border: 1px solid #2a3f54;
-        }
-        
-        .replay-ctrl-btn {
-            background: transparent;
-            border: none;
-            color: #e2e8f0;
-            font-size: 1rem;
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .replay-ctrl-btn:hover {
-            background: #1f364d;
-            color: #ffb347;
-        }
-        
-        .replay-ctrl-btn.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        
-        .speed-slider-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #0a121c;
-            padding: 5px 16px;
-            border-radius: 50px;
-            border: 1px solid #2a3f54;
-        }
-        
-        .speed-slider-wrap label {
-            font-size: 0.75rem;
-            color: #9aaebf;
-        }
-        
-        input[type="range"] {
-            width: 140px;
-            height: 4px;
-            -webkit-appearance: none;
-            background: #2a3f54;
-            border-radius: 4px;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            background: #ffb347;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        #replaySpeedValue {
-            min-width: 55px;
-            background: #1e2a36;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: #ffd966;
-        }
-        
-        .status-badge {
+            border-radius: 8px;
+            border: 1px solid #3a5670;
+            padding: 6px 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #0a121c;
-            padding: 5px 14px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            color: #b9c7d9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
-        .led {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #2ecc71;
-            box-shadow: 0 0 4px #2ecc71;
+        .replay-control:hover {
+            background: #1f364d;
+            border-color: #ffb347;
+            transform: scale(1.02);
         }
         
-        .led.paused {
-            background: #f39c12;
+        .replay-icon {
+            font-size: 18px;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
         }
         
-        .bar-counter {
-            font-family: monospace;
-            font-size: 0.7rem;
-            background: #0a121c;
-            padding: 5px 12px;
-            border-radius: 30px;
+        .replay-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #e6e9f0;
+            letter-spacing: 0.3px;
+        }
+        
+        .replay-control.active {
+            background: #2a4a6e;
+            border-color: #ffb347;
+            box-shadow: 0 0 6px rgba(255,180,71,0.3);
+        }
+        
+        .replay-control.active .replay-text {
             color: #ffd966;
         }
         
-        /* Replay Chart Container */
-        .replay-chart-wrapper {
-            flex: 1;
-            background: #0b1017;
-            position: relative;
-            min-height: 0;
+        /* Simple replay status indicator (small dot when active) */
+        .replay-badge {
+            width: 8px;
+            height: 8px;
+            background-color: #ffb347;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.2s infinite;
         }
         
-        #replayChartContainer {
-            width: 100%;
-            height: 100%;
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
         }
         
-        /* keep original site untouched */
-        @media (max-width: 800px) {
-            .replay-controls { flex-direction: column; align-items: stretch; }
-            .ctrl-group { justify-content: center; }
+        /* Tooltip style for better UX */
+        .replay-control::after {
+            content: "Replay mode - step through historical bars";
+            position: absolute;
+            bottom: -32px;
+            right: 0;
+            background: #1e2a36;
+            color: #ffd966;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid #3a5670;
+            font-weight: normal;
+            z-index: 101;
+        }
+        
+        .replay-control:hover::after {
+            opacity: 1;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .replay-control {
+                top: 8px;
+                right: 8px;
+                padding: 4px 10px;
+            }
+            .replay-text {
+                font-size: 11px;
+            }
+            .replay-icon {
+                font-size: 14px;
+            }
+            .replay-control::after {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Original Header with Replay Icon added next to indicators area -->
+    <!-- Minimal header -->
     <div class="header">
-        <div class="logo">
-            📊 TV CHARTS
-            <!-- Replay Icon Button - positioned near indicator area on top horizontal axis -->
-            <div class="replay-icon-btn" id="replayIconBtn">
-                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 4v4l5-4-5-4v4zM4 12h16M12 4v16" />
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 12l4-4 4 4-4 4z" />
-                </svg>
-                <span>Replay</span>
-            </div>
-        </div>
+        <div class="logo">📊 TV CHARTS</div>
         <div class="pair-selector">
             <div class="pair-btn active" id="btn-xau" onclick="switchPair('XAUUSD')">XAUUSD</div>
             <div class="pair-btn" id="btn-btc" onclick="switchPair('BTCUSD')">BTCUSD</div>
         </div>
     </div>
     
-    <!-- Original TradingView Chart Container -->
+    <!-- Fullscreen TradingView Chart -->
     <div class="chart-container">
         <div id="tv_chart"></div>
-    </div>
-
-    <!-- REPLAY MODAL (Bar Replay Engine) - pops up when replay icon clicked -->
-    <div id="replayModal" class="replay-modal">
-        <div class="replay-panel">
-            <div class="replay-header">
-                <div class="replay-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 4v4l5-4-5-4v4zM4 12h16M12 4v16" />
-                        <circle cx="12" cy="12" r="10" />
-                        <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
-                    </svg>
-                    <span>Bar Replay Engine</span>
-                </div>
-                <button class="close-modal" id="closeReplayModal">✕ Close</button>
-            </div>
-            
-            <!-- Replay Controls UI -->
-            <div class="replay-controls">
-                <div class="ctrl-group">
-                    <button class="replay-ctrl-btn" id="replayPlayBtn">▶ Play</button>
-                    <button class="replay-ctrl-btn" id="replayPauseBtn">⏸ Pause</button>
-                    <button class="replay-ctrl-btn" id="replayStepBtn">⏩ Step</button>
-                    <button class="replay-ctrl-btn" id="replayResetBtn">⟳ Reset</button>
-                </div>
-                
-                <div class="speed-slider-wrap">
-                    <label>⚡ Speed</label>
-                    <input type="range" id="replaySpeedSlider" min="100" max="2000" step="20" value="600">
-                    <span id="replaySpeedValue">600 ms</span>
-                </div>
-                
-                <div class="status-badge">
-                    <div class="led" id="replayLed"></div>
-                    <span id="replayStatusText">Ready</span>
-                </div>
-                <div class="bar-counter" id="barCounterDisplay">Bars: 0 / 0</div>
-            </div>
-            
-            <!-- Chart container for Lightweight Charts (Replay) -->
-            <div class="replay-chart-wrapper">
-                <div id="replayChartContainer"></div>
-            </div>
+        
+        <!-- Custom Replay Mode Icon (positioned near indicator area / top right) -->
+        <div id="replayButton" class="replay-control" onclick="toggleReplayMode()">
+            <span class="replay-icon">⏪</span>
+            <span class="replay-text" id="replayText">Replay</span>
+            <span id="replayActiveDot" style="display: none;" class="replay-badge"></span>
         </div>
     </div>
 
     <!-- TradingView Widget Script -->
     <script src="https://s3.tradingview.com/tv.js"></script>
-    <!-- Lightweight Charts for Replay Engine -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
-    
     <script>
-        // ==================== ORIGINAL TRADINGVIEW CODE (UNTouched) ====================
         let currentPair = 'XAUUSD';
         let tvWidget = null;
+        let replayActive = false;
+        let replayInterval = null;
+        let replayBarIndex = 0;
+        let originalBarsData = []; // store bars for replay simulation
+        let replaySymbol = null;
+        let isReplaySimulating = false;
         
+        // Helper to get the chart instance from widget (internal)
+        function getChart() {
+            if (tvWidget && tvWidget._api) {
+                return tvWidget._api;
+            }
+            return null;
+        }
+        
+        // Custom replay mode using TradingView's chart methods (bar replay simulation)
+        // This creates a replay effect by moving the time scale step by step using the chart's built-in methods.
+        // We'll use requestAnimationFrame or setInterval to move forward one bar at a time,
+        // and provide a smooth replay experience near the indicator area.
+        
+        function startReplayMode() {
+            if (replayActive) return;
+            
+            try {
+                const chart = getChart();
+                if (!chart) {
+                    console.warn("Chart API not ready yet, retrying...");
+                    setTimeout(startReplayMode, 500);
+                    return;
+                }
+                
+                // Reset replay state
+                replayActive = true;
+                isReplaySimulating = true;
+                
+                // Update UI
+                const replayBtn = document.getElementById('replayButton');
+                const replayTextSpan = document.getElementById('replayText');
+                const activeDot = document.getElementById('replayActiveDot');
+                
+                if (replayBtn) replayBtn.classList.add('active');
+                if (replayTextSpan) replayTextSpan.innerHTML = 'Replay ▶';
+                if (activeDot) activeDot.style.display = 'inline-block';
+                
+                // First, save current visible range, then go to earliest visible bar and start stepping
+                // TradingView widget provides methods: getVisibleRange(), setVisibleRange(), 
+                // and we can use chart.executeActionById("timeScaleStepLeft") or custom stepping.
+                // For elegant replay, we get the first timestamp from series and step forward bar by bar.
+                
+                // Get the main series to know bar interval
+                chart.getSeries().then(series => {
+                    if (series && series.getBars) {
+                        // Fetch recent bars (max 500) to get timestamps for stepping
+                        // Alternatively, we can use the built-in timeScale to step left/right.
+                        // Simpler but effective: use setInterval to press "step right" action.
+                        // TradingView has "timeScaleStepRight" action id.
+                        // We'll move one bar forward every 1.2 seconds for classic replay feel.
+                        
+                        // First, move to the earliest visible bar (optional: scroll to beginning)
+                        // We can execute "timeScaleStepLeft" multiple times, but easier: set time to start
+                        // Let's get the first timestamp from the loaded data range.
+                        // For robust replay, we use the chart's timeScale to get min & max, then start from min.
+                        const timeScale = chart.timeScale();
+                        const visibleRange = timeScale.getVisibleRange();
+                        
+                        // Get the logical range (bar indexes)
+                        const logicalRange = timeScale.getVisibleLogicalRange();
+                        if (logicalRange) {
+                            // Start replay from the leftmost bar index
+                            replayBarIndex = logicalRange.from;
+                            const totalBars = logicalRange.to - logicalRange.from;
+                            
+                            // Clear any existing interval
+                            if (replayInterval) clearInterval(replayInterval);
+                            
+                            // Function to step to next bar
+                            const stepNextBar = () => {
+                                if (!replayActive) return;
+                                
+                                const currentLogical = timeScale.getVisibleLogicalRange();
+                                if (currentLogical) {
+                                    let nextFrom = currentLogical.from + 1;
+                                    let nextTo = currentLogical.to + 1;
+                                    
+                                    // If we reached the end, stop replay gracefully
+                                    if (nextTo > currentLogical.to + 5 || nextFrom > replayBarIndex + totalBars + 5) {
+                                        stopReplayMode();
+                                        return;
+                                    }
+                                    
+                                    // Set new logical range (shift one bar forward)
+                                    timeScale.setVisibleLogicalRange({ from: nextFrom, to: nextTo });
+                                }
+                            };
+                            
+                            // Start stepping every 1.2 seconds (classic replay speed)
+                            replayInterval = setInterval(stepNextBar, 1200);
+                            
+                            // Also add a small delay then first step
+                            setTimeout(() => {
+                                if (replayActive) stepNextBar();
+                            }, 300);
+                        }
+                    } else {
+                        // Fallback: use key shortcuts simulation via action IDs
+                        if (replayInterval) clearInterval(replayInterval);
+                        replayInterval = setInterval(() => {
+                            if (!replayActive) return;
+                            try {
+                                chart.executeActionById("timeScaleStepRight");
+                            } catch(e) {}
+                        }, 1200);
+                    }
+                }).catch(err => {
+                    console.warn("Series access fallback, using action replay");
+                    if (replayInterval) clearInterval(replayInterval);
+                    replayInterval = setInterval(() => {
+                        if (!replayActive) return;
+                        try {
+                            const fallbackChart = getChart();
+                            if (fallbackChart) fallbackChart.executeActionById("timeScaleStepRight");
+                        } catch(e) {}
+                    }, 1200);
+                });
+                
+            } catch (error) {
+                console.error("Error starting replay mode:", error);
+                replayActive = false;
+                isReplaySimulating = false;
+                updateReplayUI(false);
+            }
+        }
+        
+        function stopReplayMode() {
+            if (replayInterval) {
+                clearInterval(replayInterval);
+                replayInterval = null;
+            }
+            replayActive = false;
+            isReplaySimulating = false;
+            updateReplayUI(false);
+            
+            // Optionally restore normal view? We'll keep chart as is after stopping, user can zoom out.
+            // But we also reset any active dot and button style.
+        }
+        
+        function updateReplayUI(active) {
+            const replayBtn = document.getElementById('replayButton');
+            const replayTextSpan = document.getElementById('replayText');
+            const activeDot = document.getElementById('replayActiveDot');
+            
+            if (active) {
+                if (replayBtn) replayBtn.classList.add('active');
+                if (replayTextSpan) replayTextSpan.innerHTML = 'Replay ▶';
+                if (activeDot) activeDot.style.display = 'inline-block';
+            } else {
+                if (replayBtn) replayBtn.classList.remove('active');
+                if (replayTextSpan) replayTextSpan.innerHTML = 'Replay';
+                if (activeDot) activeDot.style.display = 'none';
+            }
+        }
+        
+        // Toggle replay mode - with safety to not conflict with widget internals
+        window.toggleReplayMode = function() {
+            if (replayActive) {
+                stopReplayMode();
+            } else {
+                // Before starting new replay, make sure any previous interval is cleared
+                if (replayInterval) {
+                    clearInterval(replayInterval);
+                    replayInterval = null;
+                }
+                startReplayMode();
+            }
+        };
+        
+        // When switching pairs, we must stop replay mode to avoid errors on new widget
+        function stopReplayAndCleanup() {
+            if (replayInterval) {
+                clearInterval(replayInterval);
+                replayInterval = null;
+            }
+            replayActive = false;
+            isReplaySimulating = false;
+            updateReplayUI(false);
+        }
+        
+        // Enhanced initialization with replay integration
         function initTradingViewWidget(symbol) {
+            // Stop any active replay before reinitializing
+            stopReplayAndCleanup();
+            
+            const container = document.getElementById('tv_chart');
+            
+            // Map symbols to TradingView format
             const tvSymbol = symbol === 'XAUUSD' ? 'FX_IDC:XAUUSD' : 'COINBASE:BTCUSD';
             
+            // Destroy existing widget if any to prevent memory leaks
+            if (tvWidget && typeof tvWidget.remove === 'function') {
+                try {
+                    tvWidget.remove();
+                } catch(e) {}
+                tvWidget = null;
+            }
+            
+            // Clear container inner HTML to ensure fresh mount (TradingView will fill it)
+            const chartDiv = document.getElementById('tv_chart');
+            if (chartDiv) {
+                // Keep div clean but TradingView script will populate
+            }
+            
+            // Create TradingView widget with full height
             tvWidget = new TradingView.widget({
                 "width": "100%",
                 "height": "100%",
@@ -419,364 +429,73 @@
                     "MASimple@tv-basicstudies"
                 ],
                 "disabled_features": ["use_localstorage_for_settings"],
-                "enabled_features": ["show_hide_button_on_legend"]
+                "enabled_features": ["show_hide_button_on_legend"],
+                "loading_screen": { "backgroundColor": "#0f1a24" }
+            });
+            
+            // After widget creation, ensure replay button is reset
+            tvWidget.onChartReady(() => {
+                // Optional: customize anything after chart loads
+                // Reset replay UI state
+                updateReplayUI(false);
+                
+                // Also add a small helper to ensure replay mode doesn't conflict with study panels
+                // The replay button stays near indicator area (top right) as overlay
             });
         }
         
+        // Switch between XAUUSD and BTCUSD with replay cleanup
         window.switchPair = function(pair) {
+            if (currentPair === pair) return;
             currentPair = pair;
+            
+            // Update buttons
             document.getElementById('btn-xau').classList.remove('active');
             document.getElementById('btn-btc').classList.remove('active');
             document.getElementById(pair === 'XAUUSD' ? 'btn-xau' : 'btn-btc').classList.add('active');
+            
+            // Stop replay mode gracefully
+            stopReplayAndCleanup();
+            
+            // Reinit chart with new symbol
             initTradingViewWidget(pair);
         };
         
+        // Initialize
         window.onload = function() {
             initTradingViewWidget('XAUUSD');
+            
+            // Add some extra polish: ensure replay button tooltip doesn't cause layout issues
+            const replayBtnElem = document.getElementById('replayButton');
+            if (replayBtnElem) {
+                replayBtnElem.setAttribute('title', 'Bar replay mode: step through historical bars automatically');
+            }
         };
         
+        // Handle window resize - also handle replay safety
         window.addEventListener('resize', function() {
-            if (tvWidget) tvWidget.resize();
+            if (tvWidget && tvWidget.resize) {
+                try {
+                    tvWidget.resize();
+                } catch(e) {}
+            }
+            // If replay active, keep intervals intact but no extra action needed
         });
         
-        // ==================== BAR REPLAY ENGINE (Lightweight Charts) ====================
-        // Generate realistic historical OHLCV dataset (200 bars)
-        const generateHistoricalData = () => {
-            let base = 1920.50;
-            const data = [];
-            let timestamp = Math.floor(Date.now() / 1000) - (200 * 3600);
-            for (let i = 0; i < 200; i++) {
-                const change = (Math.random() - 0.5) * 7.2;
-                const open = base;
-                const close = +(base + change).toFixed(2);
-                const high = Math.max(open, close) + Math.random() * 4.5;
-                const low = Math.min(open, close) - Math.random() * 4.5;
-                const volume = Math.floor(800 + Math.random() * 4200);
-                data.push({
-                    time: timestamp,
-                    open: +open.toFixed(2),
-                    high: +high.toFixed(2),
-                    low: +low.toFixed(2),
-                    close: +close.toFixed(2),
-                    volume: volume,
-                });
-                base = close;
-                timestamp += 3600;
+        // Clean up before page unload
+        window.addEventListener('beforeunload', function() {
+            if (replayInterval) {
+                clearInterval(replayInterval);
             }
-            return data;
-        };
-        
-        const fullReplayData = generateHistoricalData();
-        const TOTAL_REPLAY_BARS = fullReplayData.length;
-        let splitIndex = 75;            // user start point (first 75 bars visible)
-        let currentReplayIdx = splitIndex;
-        let replayInterval = null;
-        let isReplayPlaying = false;
-        let replaySpeedMs = 600;
-        
-        // Chart instances for replay
-        let replayChart = null;
-        let candleSeries = null;
-        let volumeSeriesReplay = null;
-        let smaSeriesReplay = null;
-        let rsiSeriesReplay = null;
-        let displayedReplayBars = [];
-        
-        // Helper: SMA (period 14)
-        function computeSMAReplay(bars, period = 14) {
-            if (bars.length < period) return [];
-            const values = [];
-            for (let i = period - 1; i < bars.length; i++) {
-                let sum = 0;
-                for (let j = i - period + 1; j <= i; j++) sum += bars[j].close;
-                values.push({ time: bars[i].time, value: sum / period });
-            }
-            return values;
-        }
-        
-        // Helper: RSI (period 14)
-        function computeRSIReplay(bars, period = 14) {
-            if (bars.length < period + 1) return [];
-            const rsiVals = [];
-            let gains = 0, losses = 0;
-            for (let i = 1; i <= period; i++) {
-                const diff = bars[i].close - bars[i-1].close;
-                if (diff >= 0) gains += diff;
-                else losses += Math.abs(diff);
-            }
-            let avgGain = gains / period;
-            let avgLoss = losses / period;
-            let rs = avgGain / avgLoss;
-            let rsi = 100 - (100 / (1 + rs));
-            rsiVals.push({ time: bars[period].time, value: rsi });
-            for (let i = period + 1; i < bars.length; i++) {
-                const diff = bars[i].close - bars[i-1].close;
-                const gain = diff > 0 ? diff : 0;
-                const loss = diff < 0 ? Math.abs(diff) : 0;
-                avgGain = (avgGain * (period - 1) + gain) / period;
-                avgLoss = (avgLoss * (period - 1) + loss) / period;
-                rs = avgGain / avgLoss;
-                rsi = 100 - (100 / (1 + rs));
-                rsiVals.push({ time: bars[i].time, value: rsi });
-            }
-            return rsiVals;
-        }
-        
-        function refreshReplayIndicators() {
-            if (!candleSeries) return;
-            const candleData = displayedReplayBars.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close }));
-            candleSeries.setData(candleData);
-            
-            const volData = displayedReplayBars.map(b => ({ time: b.time, value: b.volume, color: b.close >= b.open ? '#4caf50aa' : '#f44336aa' }));
-            volumeSeriesReplay.setData(volData);
-            
-            const smaPoints = computeSMAReplay(displayedReplayBars, 14);
-            smaSeriesReplay.setData(smaPoints);
-            
-            const rsiPoints = computeRSIReplay(displayedReplayBars, 14);
-            rsiSeriesReplay.setData(rsiPoints);
-            
-            replayChart.timeScale().fitContent();
-            updateBarCounter();
-        }
-        
-        function resetReplayToSplit() {
-            if (isReplayPlaying) stopReplayPlayback();
-            currentReplayIdx = splitIndex;
-            displayedReplayBars = fullReplayData.slice(0, splitIndex);
-            refreshReplayIndicators();
-            updateReplayUIStatus(false, false);
-        }
-        
-        function stepReplayForward() {
-            if (currentReplayIdx < TOTAL_REPLAY_BARS) {
-                const nextBar = fullReplayData[currentReplayIdx];
-                displayedReplayBars.push(nextBar);
-                currentReplayIdx++;
-                refreshReplayIndicators();
-                if (currentReplayIdx === TOTAL_REPLAY_BARS && isReplayPlaying) {
-                    stopReplayPlayback();
-                    updateReplayUIStatus(false, true);
-                }
-                return true;
-            } else {
-                if (isReplayPlaying) stopReplayPlayback();
-                updateReplayUIStatus(false, true);
-                return false;
-            }
-        }
-        
-        function startReplayPlayback() {
-            if (isReplayPlaying) return;
-            if (currentReplayIdx >= TOTAL_REPLAY_BARS) {
-                updateReplayUIStatus(false, true);
-                return;
-            }
-            isReplayPlaying = true;
-            if (replayInterval) clearInterval(replayInterval);
-            replayInterval = setInterval(() => {
-                if (!isReplayPlaying) return;
-                if (currentReplayIdx < TOTAL_REPLAY_BARS) {
-                    stepReplayForward();
-                    if (currentReplayIdx === TOTAL_REPLAY_BARS) {
-                        stopReplayPlayback();
-                        updateReplayUIStatus(false, true);
-                    }
-                } else {
-                    stopReplayPlayback();
-                    updateReplayUIStatus(false, true);
-                }
-            }, replaySpeedMs);
-            updateReplayUIStatus(true, false);
-        }
-        function stopReplayPlayback() {
-            if (replayInterval) { clearInterval(replayInterval); replayInterval = null; }
-            isReplayPlaying = false;
-            updateReplayUIStatus(false, false);
-        }
-        
-        function pauseReplayPlayback() {
-            if (replayInterval) { clearInterval(replayInterval); replayInterval = null; }
-            isReplayPlaying = false;
-            updateReplayUIStatus(false, false);
-        }
-        
-        function updateReplayUIStatus(playing, isFinished) {
-            const led = document.getElementById('replayLed');
-            const statusSpan = document.getElementById('replayStatusText');
-            const playBtn = document.getElementById('replayPlayBtn');
-            const pauseBtn = document.getElementById('replayPauseBtn');
-            const stepBtn = document.getElementById('replayStepBtn');
-            
-            if (playing) {
-                led.className = 'led';
-                led.style.background = '#2ecc71';
-                statusSpan.innerText = '▶ Playing...';
-                playBtn.classList.add('disabled');
-                pauseBtn.classList.remove('disabled');
-            } else if (isFinished || currentReplayIdx >= TOTAL_REPLAY_BARS) {
-                led.className = 'led';
-                led.style.background = '#7f8c8d';
-                statusSpan.innerText = '⏹️ End';
-                playBtn.classList.add('disabled');
-                stepBtn.classList.add('disabled');
-            } else {
-                led.className = 'led paused';
-                led.style.background = '#f39c12';
-                statusSpan.innerText = '⏸ Paused';
-                playBtn.classList.remove('disabled');
-                stepBtn.classList.remove('disabled');
-            }
-            if (playing) pauseBtn.classList.remove('disabled');
-            else pauseBtn.classList.remove('disabled');
-            if (currentReplayIdx >= TOTAL_REPLAY_BARS) stepBtn.classList.add('disabled');
-            else stepBtn.classList.remove('disabled');
-        }
-        
-        function updateBarCounter() {
-            const counterSpan = document.getElementById('barCounterDisplay');
-            counterSpan.innerHTML = `📊 Bars: ${displayedReplayBars.length} / ${TOTAL_REPLAY_BARS}  |  Split: ${splitIndex}`;
-        }
-        
-        function initReplayChart() {
-            const container = document.getElementById('replayChartContainer');
-            replayChart = LightweightCharts.createChart(container, {
-                width: container.clientWidth,
-                height: container.clientHeight,
-                layout: { background: { color: '#0b1017' }, textColor: '#d1d4dc' },
-                grid: { vertLines: { color: '#1e2a36' }, horzLines: { color: '#1e2a36' } },
-                timeScale: { borderColor: '#2a3f54', timeVisible: true },
-                rightPriceScale: { borderColor: '#2a3f54' }
-            });
-            
-            candleSeries = replayChart.addSeries(LightweightCharts.CandlestickSeries, {
-                upColor: '#4caf50', downColor: '#f44336', borderDownColor: '#f44336', borderUpColor: '#4caf50'
-            });
-            
-            volumeSeriesReplay = replayChart.addSeries(LightweightCharts.HistogramSeries, {
-                color: '#4caf5088', priceFormat: { type: 'volume' }, priceScaleId: 'volume'
-            });
-            replayChart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
-            
-            smaSeriesReplay = replayChart.addSeries(LightweightCharts.LineSeries, {
-                color: '#ffb347', lineWidth: 2, title: 'SMA 14'
-            });
-            
-            const rsiPane = replayChart.addSeries(LightweightCharts.LineSeries, {
-                color: '#f1c40f', lineWidth: 2, priceScaleId: 'rsi', title: 'RSI 14'
-            });
-            rsiSeriesReplay = rsiPane;
-            replayChart.priceScale('rsi').applyOptions({ scaleMargins: { top: 0.7, bottom: 0.05 }, autoScale: true });
-            
-            window.addEventListener('resize', () => {
-                if (replayChart) {
-                    replayChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-                    replayChart.timeScale().fitContent();
-                }
-            });
-        }
-        
-        function setupReplayEventHandlers() {
-            document.getElementById('replayPlayBtn').onclick = () => { if (currentReplayIdx < TOTAL_REPLAY_BARS) startReplayPlayback(); else alert('Replay ended. Press Reset.'); };
-            document.getElementById('replayPauseBtn').onclick = () => pauseReplayPlayback();
-            document.getElementById('replayStepBtn').onclick = () => { if (isReplayPlaying) pauseReplayPlayback(); stepReplayForward(); updateReplayUIStatus(false, false); };
-            document.getElementById('replayResetBtn').onclick = () => { if (isReplayPlaying) stopReplayPlayback(); resetReplayToSplit(); };
-            
-            const speedSlider = document.getElementById('replaySpeedSlider');
-            const speedVal = document.getElementById('replaySpeedValue');
-            speedSlider.addEventListener('input', (e) => {
-                replaySpeedMs = parseInt(e.target.value);
-                speedVal.innerText = replaySpeedMs + ' ms';
-                if (isReplayPlaying) {
-                    if (replayInterval) clearInterval(replayInterval);
-                    replayInterval = setInterval(() => {
-                        if (!isReplayPlaying) return;
-                        if (currentReplayIdx < TOTAL_REPLAY_BARS) stepReplayForward();
-                        else { stopReplayPlayback(); updateReplayUIStatus(false, true); }
-                    }, replaySpeedMs);
-                }
-            });
-        }
-        
-        // Modal open/close & split index config (double-click on counter to change split)
-        const modal = document.getElementById('replayModal');
-        const replayIconBtn = document.getElementById('replayIconBtn');
-        const closeModalBtn = document.getElementById('closeReplayModal');
-        
-        replayIconBtn.onclick = () => {
-            modal.classList.add('active');
-            // reinitialize chart if not exist or resize
-            if (!replayChart) {
-                initReplayChart();
-                setupReplayEventHandlers();
-                splitIndex = 75;
-                currentReplayIdx = splitIndex;
-                displayedReplayBars = fullReplayData.slice(0, splitIndex);
-                refreshReplayIndicators();
-                updateReplayUIStatus(false, false);
-            } else {
-                // ensure fresh reset when opening modal but keep existing state
-                if (displayedReplayBars.length === 0) resetReplayToSplit();
-                replayChart.timeScale().fitContent();
-            }
-        };
-        
-        closeModalBtn.onclick = () => {
-            if (isReplayPlaying) stopReplayPlayback();
-            modal.classList.remove('active');
-        };
-        
-        // Allow user to change split index via double-click on bar counter
-        document.getElementById('barCounterDisplay').style.cursor = 'pointer';
-        document.getElementById('barCounterDisplay').title = 'Double-click to set Split Index (start bars)';
-        document.getElementById('barCounterDisplay').addEventListener('dblclick', () => {
-            let newSplit = prompt(`Set split index (initial visible bars) [1-${TOTAL_REPLAY_BARS-1}]:`, splitIndex);
-            if (newSplit) {
-                let val = parseInt(newSplit);
-                if (!isNaN(val) && val >= 1 && val < TOTAL_REPLAY_BARS) {
-                    splitIndex = val;
-                    if (isReplayPlaying) stopReplayPlayback();
-                    currentReplayIdx = splitIndex;
-                    displayedReplayBars = fullReplayData.slice(0, splitIndex);
-                    refreshReplayIndicators();
-                    updateReplayUIStatus(false, false);
-                } else alert(`Invalid. Use between 1 and ${TOTAL_REPLAY_BARS-1}`);
+            if (tvWidget && typeof tvWidget.remove === 'function') {
+                try {
+                    tvWidget.remove();
+                } catch(e) {}
             }
         });
         
-        // if modal closed by clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                if (isReplayPlaying) stopReplayPlayback();
-                modal.classList.remove('active');
-            }
-        });
-        
-        // initialize replay chart only when first opened, but prepare data
-        window.initReplayOnDemand = () => {
-            if (!replayChart) {
-                initReplayChart();
-                setupReplayEventHandlers();
-                splitIndex = 75;
-                currentReplayIdx = splitIndex;
-                displayedReplayBars = fullReplayData.slice(0, splitIndex);
-                refreshReplayIndicators();
-                updateReplayUIStatus(false, false);
-            }
-        };
-        // preload lightweight charts but avoid double init
-        setTimeout(() => {
-            if (!replayChart) {
-                initReplayChart();
-                setupReplayEventHandlers();
-                splitIndex = 75;
-                currentReplayIdx = splitIndex;
-                displayedReplayBars = fullReplayData.slice(0, splitIndex);
-                refreshReplayIndicators();
-                updateReplayUIStatus(false, false);
-                modal.classList.remove('active');
-            }
-        }, 500);
+        // Additional safeguard: if user clicks on any study or indicator, replay mode shouldn't break.
+        // The custom button remains independent.
     </script>
 </body>
-</html>
+    </html>
