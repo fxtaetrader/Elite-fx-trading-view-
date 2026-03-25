@@ -582,4 +582,136 @@
                 let newVal = parseInt(newSplit, 10);
                 if (!isNaN(newVal) && newVal >= 1 && newVal <= TOTAL_BARS - 1) {
                     splitIndex = newVal;
-                    if (currentReplayIndex > splitInd
+                    if (currentReplayIndex > splitIndex) currentReplayIndex = splitIndex;
+                    else if (currentReplayIndex < splitIndex) currentReplayIndex = splitIndex;
+                    resetToSplit();
+                } else {
+                    alert(`Invalid split. Enter between 1 and ${TOTAL_BARS-1}`);
+                }
+            }
+        });
+    }
+    
+    // Initialize lightweight charts with extra panes: main candlestick + volume pane + RSI pane
+    function initChart() {
+        const container = document.getElementById('chartContainer');
+        chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight,
+            layout: {
+                background: { color: '#0a0f1a' },
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#1e2532' },
+                horzLines: { color: '#1e2532' },
+            },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            rightPriceScale: { borderColor: '#2a3342' },
+            timeScale: { borderColor: '#2a3342', timeVisible: true, secondsVisible: false },
+        });
+        
+        // Candlestick series (main)
+        candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#4caf50',
+            downColor: '#f44336',
+            borderDownColor: '#f44336',
+            borderUpColor: '#4caf50',
+            wickUpColor: '#4caf50',
+            wickDownColor: '#f44336',
+        });
+        
+        // Volume series (separate pane)
+        volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: '#4caf5088',
+            priceFormat: { type: 'volume' },
+            priceScaleId: 'volume',
+        });
+        chart.priceScale('volume').applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0 },
+            borderColor: '#2a3342',
+        });
+        
+        // SMA (moving average) line series - overlayed on main pane
+        smaSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            color: '#ffb347',
+            lineWidth: 2,
+            priceLineVisible: false,
+            title: 'SMA 14',
+        });
+        
+        // RSI pane: separate pane at bottom
+        const rsiPane = chart.addSeries(LightweightCharts.LineSeries, {
+            color: '#f1c40f',
+            lineWidth: 2,
+            priceScaleId: 'rsi',
+            title: 'RSI 14',
+        });
+        rsiSeries = rsiPane;
+        chart.priceScale('rsi').applyOptions({
+            scaleMargins: { top: 0.7, bottom: 0.05 },
+            borderColor: '#2a3342',
+            autoScale: true,
+        });
+        
+        // initial empty data
+        candlestickSeries.setData([]);
+        volumeSeries.setData([]);
+        smaSeries.setData([]);
+        rsiSeries.setData([]);
+        
+        window.addEventListener('resize', () => {
+            chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+            chart.timeScale().fitContent();
+        });
+    }
+    
+    // attach all event handlers
+    function attachEvents() {
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (currentReplayIndex >= TOTAL_BARS) {
+                // if at end, reset first? maybe optional but better: reset from split? 
+                // better UX: if at end, click reset first.
+                alert('Replay ended. Click Reset to start from split index.');
+                return;
+            }
+            startPlayback();
+        });
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            pausePlayback();
+        });
+        document.getElementById('stepBtn').addEventListener('click', () => {
+            if (isPlaying) pausePlayback();
+            if (currentReplayIndex >= TOTAL_BARS) {
+                alert('No more bars. Press Reset to replay.');
+                return;
+            }
+            stepForward();
+            updateUIStatus(false, false);
+        });
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (isPlaying) stopPlayback();
+            resetToSplit();
+        });
+    }
+    
+    // wrapper to fully initialize engine
+    function initReplayEngine() {
+        initChart();
+        attachEvents();
+        initSpeedSlider();
+        enableSplitSelector();
+        // initial display up to splitIndex (80)
+        splitIndex = 80;
+        currentReplayIndex = splitIndex;
+        displayedBars = fullData.slice(0, splitIndex);
+        refreshAllIndicatorsAndSeries();
+        updateUIStatus(false, false);
+        updateSplitInfoDisplay();
+    }
+    
+    // start everything
+    initReplayEngine();
+</script>
+</body>
+</html>
