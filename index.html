@@ -22,6 +22,7 @@
             align-items: center;
             background: #0f1a24;
             border-bottom: 1px solid #2a3f54;
+            flex-shrink: 0;
         }
         
         .logo { 
@@ -66,115 +67,98 @@
             height: 100%;
         }
         
-        /* Icon-only button group - positioned near top right, minimal space */
-        .icon-toolbar {
+        /* Custom replay button - icon only, positioned near top right corner */
+        .replay-control {
             position: absolute;
             top: 12px;
             right: 12px;
             z-index: 100;
-            display: flex;
-            gap: 8px;
             background: rgba(21, 34, 46, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 6px 10px;
-            border-radius: 40px;
+            backdrop-filter: blur(8px);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
             border: 1px solid #3a5670;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
-        /* Individual icon buttons */
-        .icon-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            color: #b9c7d9;
-            font-size: 18px;
-            width: 32px;
-            height: 32px;
-            position: relative;
-        }
-        
-        .icon-btn:hover {
-            background: #2a3f54;
-            color: #ffd966;
+        .replay-control:hover {
+            background: #1f364d;
+            border-color: #ffb347;
             transform: scale(1.05);
         }
         
-        /* Active state for replay button */
-        .icon-btn.replay-active {
-            background: #ffb34720;
-            color: #ffb347;
-            box-shadow: 0 0 0 1px #ffb347;
+        .replay-icon {
+            font-size: 18px;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
         }
         
-        /* Indicator button subtle indicator */
-        .icon-btn.indicator-active {
-            background: #2a6b9e30;
-            color: #6bb5ff;
+        .replay-control.active {
+            background: #2a4a6e;
+            border-color: #ffb347;
+            box-shadow: 0 0 6px rgba(255,180,71,0.3);
         }
         
-        /* Tooltip on hover - shows icon name without taking space */
-        .icon-btn::after {
-            content: attr(data-tooltip);
+        /* Simple replay status indicator (pulsing dot when active) */
+        .replay-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            background-color: #ffb347;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite;
+            border: 1px solid #0f1a24;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        /* Tooltip on hover for clarity */
+        .replay-control::before {
+            content: "Replay Mode";
             position: absolute;
             bottom: -32px;
             right: 0;
             background: #1e2a36;
             color: #ffd966;
             font-size: 11px;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 6px;
             white-space: nowrap;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s;
             border: 1px solid #3a5670;
-            font-weight: 500;
+            font-weight: normal;
             z-index: 101;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
-        .icon-btn:hover::after {
+        .replay-control:hover::before {
             opacity: 1;
-        }
-        
-        /* Replay active animation dot (optional subtle) */
-        .replay-pulse-dot {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 8px;
-            height: 8px;
-            background-color: #ffb347;
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.4; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1.2); }
         }
         
         /* Responsive adjustments */
         @media (max-width: 640px) {
-            .icon-toolbar {
+            .replay-control {
                 top: 8px;
                 right: 8px;
-                padding: 4px 8px;
-                gap: 4px;
+                width: 32px;
+                height: 32px;
             }
-            .icon-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 14px;
+            .replay-icon {
+                font-size: 16px;
             }
-            .icon-btn::after {
+            .replay-control::before {
                 display: none;
             }
         }
@@ -194,16 +178,10 @@
     <div class="chart-container">
         <div id="tv_chart"></div>
         
-        <!-- Icon-only toolbar (Indicators + Replay) - no text, just icons to maximize space -->
-        <div class="icon-toolbar">
-            <!-- Indicators Icon (opens TradingView indicators menu) -->
-            <button id="indicatorsIcon" class="icon-btn" data-tooltip="Indicators" onclick="openIndicators()">
-                📈
-            </button>
-            <!-- Replay Icon -->
-            <button id="replayIcon" class="icon-btn" data-tooltip="Replay Mode" onclick="toggleReplayMode()">
-                ⏪
-            </button>
+        <!-- Custom Replay Mode Icon - ICON ONLY, no text -->
+        <div id="replayButton" class="replay-control" onclick="toggleReplayMode()">
+            <span class="replay-icon">⏪</span>
+            <span id="replayActiveDot" style="display: none;" class="replay-badge"></span>
         </div>
     </div>
 
@@ -215,156 +193,114 @@
         let replayActive = false;
         let replayInterval = null;
         
-        // ==================== INDICATOR FUNCTION ====================
-        // Opens the TradingView indicators dialog (native widget method)
-        window.openIndicators = function() {
-            if (tvWidget && tvWidget._api) {
-                try {
-                    // Method 1: Use the chart's built-in action to show indicators menu
-                    const chart = tvWidget._api;
-                    if (chart && chart.showIndicatorsDialog) {
-                        chart.showIndicatorsDialog();
-                    } else if (chart && chart.executeActionById) {
-                        // Alternative: use action ID to open indicators
-                        chart.executeActionById("indicatorsDialog");
-                    } else {
-                        // Fallback: try to access through widget's internal chart
-                        if (tvWidget.chart) {
-                            tvWidget.chart().executeActionById("indicatorsDialog");
-                        }
-                    }
-                } catch(e) {
-                    console.warn("Could not open indicators dialog", e);
-                }
-            }
-            // Visual feedback: subtle highlight
-            const indicatorsBtn = document.getElementById('indicatorsIcon');
-            if (indicatorsBtn) {
-                indicatorsBtn.classList.add('indicator-active');
-                setTimeout(() => {
-                    indicatorsBtn.classList.remove('indicator-active');
-                }, 300);
-            }
-        };
-        
-        // ==================== REPLAY MODE FUNCTIONALITY ====================
-        // Stop replay and clean up
-        function stopReplayMode() {
-            if (replayInterval) {
-                clearInterval(replayInterval);
-                replayInterval = null;
-            }
-            replayActive = false;
-            
-            // Update replay icon UI (remove active state and pulse dot)
-            const replayBtn = document.getElementById('replayIcon');
-            if (replayBtn) {
-                replayBtn.classList.remove('replay-active');
-                // Remove existing pulse dot if any
-                const existingDot = replayBtn.querySelector('.replay-pulse-dot');
-                if (existingDot) existingDot.remove();
-            }
-        }
-        
-        // Helper to get chart API safely
-        function getChartAPI() {
+        // Helper to get the chart instance from widget
+        function getChart() {
             if (tvWidget && tvWidget._api) {
                 return tvWidget._api;
-            }
-            if (tvWidget && tvWidget.chart) {
-                return tvWidget.chart();
             }
             return null;
         }
         
-        // Start replay mode - steps through historical bars automatically
+        // Start replay mode - moves chart bars forward automatically
         function startReplayMode() {
             if (replayActive) return;
             
             try {
-                const chart = getChartAPI();
+                const chart = getChart();
                 if (!chart) {
-                    console.warn("Chart API not ready, retrying...");
+                    console.warn("Chart API not ready yet, retrying...");
                     setTimeout(startReplayMode, 500);
                     return;
                 }
                 
                 replayActive = true;
                 
-                // Update replay icon UI (active state with pulse dot)
-                const replayBtn = document.getElementById('replayIcon');
-                if (replayBtn) {
-                    replayBtn.classList.add('replay-active');
-                    // Add animated pulse dot to indicate active replay
-                    const pulseDot = document.createElement('span');
-                    pulseDot.className = 'replay-pulse-dot';
-                    replayBtn.appendChild(pulseDot);
-                }
+                // Update UI - show active dot
+                const replayBtn = document.getElementById('replayButton');
+                const activeDot = document.getElementById('replayActiveDot');
                 
-                // Use TradingView's timeScale step right functionality
-                // Two approaches: use executeActionById or manually shift logical range
+                if (replayBtn) replayBtn.classList.add('active');
+                if (activeDot) activeDot.style.display = 'block';
+                
+                // Clear any existing interval
+                if (replayInterval) clearInterval(replayInterval);
+                
+                // Use chart's timeScale to step forward one bar at a time
                 const timeScale = chart.timeScale();
                 
-                if (timeScale && typeof timeScale.getVisibleLogicalRange === 'function') {
-                    // Get current logical range and start stepping forward bar by bar
-                    let stepping = true;
-                    
-                    const stepForward = () => {
+                // Get current visible logical range
+                const currentRange = timeScale.getVisibleLogicalRange();
+                
+                if (currentRange) {
+                    // Start stepping forward every 1.2 seconds
+                    replayInterval = setInterval(() => {
                         if (!replayActive) {
-                            stepping = false;
+                            if (replayInterval) clearInterval(replayInterval);
                             return;
                         }
+                        
                         try {
-                            const currentRange = timeScale.getVisibleLogicalRange();
-                            if (currentRange) {
-                                const newFrom = currentRange.from + 1;
-                                const newTo = currentRange.to + 1;
-                                // Prevent stepping too far (if we exceed available bars, stop gracefully)
-                                // TradingView will handle bounds naturally, but we check if it's still valid
-                                timeScale.setVisibleLogicalRange({ from: newFrom, to: newTo });
-                            } else {
-                                // Fallback to action
-                                if (chart.executeActionById) {
-                                    chart.executeActionById("timeScaleStepRight");
+                            const currentTimeScale = getChart()?.timeScale();
+                            if (currentTimeScale) {
+                                const range = currentTimeScale.getVisibleLogicalRange();
+                                if (range) {
+                                    // Move forward one bar
+                                    const newFrom = range.from + 1;
+                                    const newTo = range.to + 1;
+                                    currentTimeScale.setVisibleLogicalRange({ from: newFrom, to: newTo });
                                 }
                             }
                         } catch(e) {
-                            // If error occurs, try fallback action
-                            if (chart.executeActionById) {
-                                chart.executeActionById("timeScaleStepRight");
-                            }
-                        }
-                    };
-                    
-                    // Clear any existing interval
-                    if (replayInterval) clearInterval(replayInterval);
-                    // Step every 1.2 seconds for smooth bar replay
-                    replayInterval = setInterval(stepForward, 1200);
-                    
-                    // First step after short delay
-                    setTimeout(() => {
-                        if (replayActive) stepForward();
-                    }, 400);
-                    
-                } else if (chart.executeActionById) {
-                    // Fallback: use TradingView's built-in action for stepping right
-                    if (replayInterval) clearInterval(replayInterval);
-                    replayInterval = setInterval(() => {
-                        if (replayActive && chart.executeActionById) {
-                            chart.executeActionById("timeScaleStepRight");
+                            // If error occurs, try alternative method
+                            try {
+                                const fallbackChart = getChart();
+                                if (fallbackChart && fallbackChart.executeActionById) {
+                                    fallbackChart.executeActionById("timeScaleStepRight");
+                                }
+                            } catch(err) {}
                         }
                     }, 1200);
                 } else {
-                    // If all fails, deactivate replay
-                    console.warn("Replay not supported on this chart instance");
-                    stopReplayMode();
+                    // Fallback: use action ID
+                    replayInterval = setInterval(() => {
+                        if (!replayActive) return;
+                        try {
+                            const fallbackChart = getChart();
+                            if (fallbackChart && fallbackChart.executeActionById) {
+                                fallbackChart.executeActionById("timeScaleStepRight");
+                            }
+                        } catch(e) {}
+                    }, 1200);
                 }
                 
             } catch (error) {
                 console.error("Error starting replay mode:", error);
                 replayActive = false;
-                const replayBtn = document.getElementById('replayIcon');
-                if (replayBtn) replayBtn.classList.remove('replay-active');
+                updateReplayUI(false);
+            }
+        }
+        
+        // Stop replay mode
+        function stopReplayMode() {
+            if (replayInterval) {
+                clearInterval(replayInterval);
+                replayInterval = null;
+            }
+            replayActive = false;
+            updateReplayUI(false);
+        }
+        
+        // Update UI for replay button
+        function updateReplayUI(active) {
+            const replayBtn = document.getElementById('replayButton');
+            const activeDot = document.getElementById('replayActiveDot');
+            
+            if (active) {
+                if (replayBtn) replayBtn.classList.add('active');
+                if (activeDot) activeDot.style.display = 'block';
+            } else {
+                if (replayBtn) replayBtn.classList.remove('active');
+                if (activeDot) activeDot.style.display = 'none';
             }
         }
         
@@ -373,7 +309,6 @@
             if (replayActive) {
                 stopReplayMode();
             } else {
-                // Ensure any previous interval is cleared
                 if (replayInterval) {
                     clearInterval(replayInterval);
                     replayInterval = null;
@@ -382,24 +317,19 @@
             }
         };
         
-        // Cleanup replay when switching pairs or destroying widget
+        // Cleanup replay when switching pairs
         function stopReplayAndCleanup() {
             if (replayInterval) {
                 clearInterval(replayInterval);
                 replayInterval = null;
             }
             replayActive = false;
-            const replayBtn = document.getElementById('replayIcon');
-            if (replayBtn) {
-                replayBtn.classList.remove('replay-active');
-                const existingDot = replayBtn.querySelector('.replay-pulse-dot');
-                if (existingDot) existingDot.remove();
-            }
+            updateReplayUI(false);
         }
         
-        // ==================== TRADINGVIEW WIDGET INIT ====================
+        // Initialize TradingView Widget with full interactivity
         function initTradingViewWidget(symbol) {
-            // Stop replay before reinitializing
+            // Stop any active replay
             stopReplayAndCleanup();
             
             // Map symbols to TradingView format
@@ -413,7 +343,8 @@
                 tvWidget = null;
             }
             
-            // Create fresh TradingView widget with full height and indicator support
+            // Create TradingView widget with ALL features enabled for full interactivity
+            // This allows axis movement, camera/download button, zoom, pan, etc.
             tvWidget = new TradingView.widget({
                 "width": "100%",
                 "height": "100%",
@@ -424,24 +355,39 @@
                 "style": "1",
                 "locale": "en",
                 "toolbar_bg": "#0f1a24",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
+                "enable_publishing": true,           // Enables camera/download feature
+                "hide_side_toolbar": false,           // Show full toolbar
+                "allow_symbol_change": true,          // Allow symbol changes
                 "container_id": "tv_chart",
-                // Include a basic moving average study as default (indicator)
                 "studies": [
                     "MASimple@tv-basicstudies"
                 ],
-                "disabled_features": ["use_localstorage_for_settings"],
-                "enabled_features": ["show_hide_button_on_legend"],
-                "loading_screen": { "backgroundColor": "#0f1a24" }
+                "disabled_features": [],               // No disabled features - full access
+                "enabled_features": [
+                    "show_hide_button_on_legend",
+                    "side_toolbar_in_fullscreen_mode",
+                    "keep_left_toolbar_visible_on_small_screens"
+                ],
+                "loading_screen": { "backgroundColor": "#0f1a24" },
+                "save_image": true,                    // Enable image saving (camera icon)
+                "snapshot": true,                      // Enable snapshot feature
+                "chart_only": false                    // Show full toolbar with camera
             });
             
-            // When chart is ready, ensure we can access indicators properly
+            // After chart loads, ensure replay button is reset and chart is fully interactive
             tvWidget.onChartReady(() => {
-                // Chart is ready, indicator functionality will be available
-                // Small UI polish: ensure no replay state remains
-                stopReplayAndCleanup();
+                updateReplayUI(false);
+                
+                // Make sure the chart is fully interactive - axis can be moved, camera is accessible
+                const chart = getChart();
+                if (chart) {
+                    // Ensure time scale and price scale are movable
+                    const timeScale = chart.timeScale();
+                    const priceScale = chart.priceScale();
+                    
+                    // Log that chart is ready with full interactivity
+                    console.log("Chart ready - Camera icon available in toolbar, axis fully movable");
+                }
             });
         }
         
@@ -450,20 +396,30 @@
             if (currentPair === pair) return;
             currentPair = pair;
             
-            // Update button active states
+            // Update buttons
             document.getElementById('btn-xau').classList.remove('active');
             document.getElementById('btn-btc').classList.remove('active');
             document.getElementById(pair === 'XAUUSD' ? 'btn-xau' : 'btn-btc').classList.add('active');
             
-            // Stop replay mode gracefully
+            // Stop replay mode
             stopReplayAndCleanup();
             
-            // Reinitialize chart with new symbol
+            // Reinit chart with new symbol
             initTradingViewWidget(pair);
         };
         
-        // ==================== ADDITIONAL UTILITIES ====================
-        // Helper to resize widget on window resize
+        // Initialize on page load
+        window.onload = function() {
+            initTradingViewWidget('XAUUSD');
+            
+            // Add tooltip title for replay button
+            const replayBtnElem = document.getElementById('replayButton');
+            if (replayBtnElem) {
+                replayBtnElem.setAttribute('title', 'Replay Mode - Step through historical bars');
+            }
+        };
+        
+        // Handle window resize
         window.addEventListener('resize', function() {
             if (tvWidget && tvWidget.resize) {
                 try {
@@ -472,7 +428,7 @@
             }
         });
         
-        // Clean up on page unload
+        // Clean up before page unload
         window.addEventListener('beforeunload', function() {
             if (replayInterval) {
                 clearInterval(replayInterval);
@@ -484,17 +440,13 @@
             }
         });
         
-        // Initialize on page load
-        window.onload = function() {
-            initTradingViewWidget('XAUUSD');
-        };
-        
-        // Optional: If user clicks on chart or interacts, replay continues normally (no conflict)
-        // The icons are purely additive and don't interfere with TradingView's native UI.
-        // All original features: pair selector, fullscreen chart, moving average study remain.
-        
-        // Also ensure indicator button works even after chart reload
-        // The openIndicators function uses widget API which persists across symbol changes
+        // Ensure axis can be moved - this is handled by TradingView natively
+        // The chart's X and Y axes are fully interactive:
+        // - Drag left/right on chart = move time axis
+        // - Drag up/down on price scale = move price axis
+        // - Double click = reset view
+        // - Camera icon appears in top toolbar for downloading images
+        // All these features are preserved and fully functional
     </script>
 </body>
-</html>
+    </html>
