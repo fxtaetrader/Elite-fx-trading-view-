@@ -1,304 +1,205 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Elite Trading View</title>
-
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-    background: #0b1017;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Trading Platform Clone</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }header {
+  background: #020617;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.header {
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    background: #0f1a24;
-    border-bottom: 1px solid #2a3f54;
+.controls button {
+  margin-right: 5px;
+  padding: 6px 10px;
+  background: #1e293b;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
-.logo { color: #ffb347; font-weight: bold; }
-#balance { color: #ffd966; font-weight: bold; }
+.controls button:hover {
+  background: #334155;
+}
+
+#chart {
+  flex: 1;
+}
 
 .toolbar {
-    display: flex;
-    gap: 8px;
-    padding: 8px;
-    background: #0f1a24;
-    border-bottom: 1px solid #2a3f54;
+  position: absolute;
+  top: 70px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .tool-btn {
-    background: #16222e;
-    border: 1px solid #3a5670;
-    color: #ffd966;
-    padding: 6px 10px;
-    cursor: pointer;
+  padding: 8px;
+  background: #1e293b;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 45px;
 }
 
-.chart-container {
-    position: relative;
-    flex: 1;
+.tool-btn:hover {
+  background: #334155;
 }
 
-#tv_chart {
-    width: 100%;
-    height: 100%;
-}
-
-.replay-controls {
-    position: absolute;
-    top: 60px;
-    left: 20px;
-    display: flex;
-    gap: 5px;
-    z-index: 999;
-}
-
-.trade-controls {
-    position: absolute;
-    top: 100px;
-    left: 20px;
-    display: flex;
-    gap: 5px;
-    z-index: 999;
-}
-
-button {
-    cursor: pointer;
-}
-
-.buy { background: green; color: white; padding: 6px; }
-.sell { background: red; color: white; padding: 6px; }
-
-</style>
+  </style>
 </head>
+<body><header>
+  <div>Advanced Trading Platform</div>  <div class="controls">
+    <button onclick="setSymbol('BTCUSDT')">BTC</button>
+    <button onclick="setSymbol('ETHUSDT')">ETH</button>
+    <button onclick="setSymbol('AAPL')">AAPL</button>
+  </div>  <div class="controls">
+    <button onclick="setTimeframe('1')">1m</button>
+    <button onclick="setTimeframe('5')">5m</button>
+    <button onclick="setTimeframe('15')">15m</button>
+    <button onclick="setTimeframe('60')">1H</button>
+  </div>
+</header><div id="chart"></div><div class="toolbar">
+  <button class="tool-btn" onclick="enableCrosshair()">+</button>
+  <button class="tool-btn" onclick="startTrendline()">/</button>
+</div><script>
+  const chartContainer = document.getElementById('chart');
 
-<body>
+  const chart = LightweightCharts.createChart(chartContainer, {
+    layout: {
+      background: { color: '#0f172a' },
+      textColor: '#DDD'
+    },
+    grid: {
+      vertLines: { color: '#1e293b' },
+      horzLines: { color: '#1e293b' }
+    },
+    width: window.innerWidth,
+    height: window.innerHeight - 80
+  });
 
-<div class="header">
-    <div class="logo">📊 ELITE TV</div>
-    <div id="balance">Balance: $1000</div>
-</div>
+  const candleSeries = chart.addCandlestickSeries();
+  const emaSeries = chart.addLineSeries();
 
-<div class="toolbar">
-    <button class="tool-btn">Indicators</button>
-    <button class="tool-btn">Replay</button>
-    <button class="tool-btn">Draw</button>
-</div>
+  let currentSymbol = 'BTCUSDT';
+  let currentTimeframe = '1';
 
-<div class="chart-container">
-
-    <div class="replay-controls">
-        <button onclick="startReplay()">⏪</button>
-        <button onclick="playReplay()">▶️</button>
-        <button onclick="pauseReplay()">⏸</button>
-        <button onclick="stepReplay()">⏭</button>
-    </div>
-
-    <div class="trade-controls">
-        <button class="buy" onclick="buyTrade()">BUY</button>
-        <button class="sell" onclick="sellTrade()">SELL</button>
-    </div>
-
-    <div id="tv_chart"></div>
-</div>
-
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-
-<script>
-let chart, candleSeries;
-let entryLine, slLine, tpLine;
-
-let allData = [];
-let replayData = [];
-let replayIndex = 0;
-let isPlaying = false;
-let speed = 400;
-
-let balance = 1000;
-let currentTrade = null;
-
-// Chart
-function initChart() {
-    const container = document.getElementById('tv_chart');
-
-    chart = LightweightCharts.createChart(container, {
-        layout: { background: { color: '#0f1a24' }, textColor: '#d1d4dc' },
-        grid: {
-            vertLines: { color: '#1f364d' },
-            horzLines: { color: '#1f364d' },
-        },
-        width: container.clientWidth,
-        height: container.clientHeight,
-    });
-
-    candleSeries = chart.addCandlestickSeries();
-}
-
-// Data
-function generateData(basePrice) {
+  function generateMockData() {
     let data = [];
-    let time = 1700000000;
-    let price = basePrice;
+    let base = 100;
 
-    for (let i = 0; i < 500; i++) {
-        let open = price;
-        let close = open + (Math.random() - 0.5) * 10;
-        let high = Math.max(open, close) + Math.random() * 5;
-        let low = Math.min(open, close) - Math.random() * 5;
+    for (let i = 0; i < 50; i++) {
+      let open = base + Math.random() * 10;
+      let close = open + (Math.random() - 0.5) * 10;
+      let high = Math.max(open, close) + Math.random() * 5;
+      let low = Math.min(open, close) - Math.random() * 5;
 
-        data.push({ time, open, high, low, close });
+      data.push({
+        time: Math.floor(Date.now() / 1000) - (50 - i) * 60,
+        open,
+        high,
+        low,
+        close
+      });
 
-        price = close;
-        time += 60;
+      base = close;
     }
 
     return data;
-}
+  }
 
-// Replay
-function startReplay() {
-    replayIndex = 0;
-    replayData = [];
-    isPlaying = false;
-    candleSeries.setData([]);
-}
+  function calculateEMA(data, period = 10) {
+    let k = 2 / (period + 1);
+    let emaArray = [];
+    let ema = data[0].close;
 
-function playReplay() {
-    isPlaying = true;
-    runReplay();
-}
-
-function pauseReplay() {
-    isPlaying = false;
-}
-
-function stepReplay() {
-    if (replayIndex < allData.length) {
-        let candle = allData[replayIndex];
-        replayData.push(candle);
-        candleSeries.setData(replayData);
-        replayIndex++;
-        checkTrade(candle);
-    }
-}
-
-function runReplay() {
-    if (!isPlaying) return;
-    stepReplay();
-    setTimeout(runReplay, speed);
-}
-
-// 🔥 DRAW LINES
-function drawTradeLines(entry, sl, tp) {
-    entryLine = candleSeries.createPriceLine({
-        price: entry,
-        color: 'blue',
-        lineWidth: 2,
-        title: 'Entry'
-    });
-
-    slLine = candleSeries.createPriceLine({
-        price: sl,
-        color: 'red',
-        lineWidth: 2,
-        title: 'SL'
-    });
-
-    tpLine = candleSeries.createPriceLine({
-        price: tp,
-        color: 'green',
-        lineWidth: 2,
-        title: 'TP'
-    });
-}
-
-// REMOVE LINES
-function removeLines() {
-    if (entryLine) candleSeries.removePriceLine(entryLine);
-    if (slLine) candleSeries.removePriceLine(slLine);
-    if (tpLine) candleSeries.removePriceLine(tpLine);
-}
-
-// Trading
-function buyTrade() {
-    if (currentTrade) return;
-
-    let c = replayData[replayData.length - 1];
-
-    let entry = c.close;
-    let sl = c.low;
-    let risk = entry - sl;
-    let tp = entry + risk * 3;
-
-    currentTrade = { type: "BUY", entry, sl, tp };
-
-    drawTradeLines(entry, sl, tp);
-}
-
-function sellTrade() {
-    if (currentTrade) return;
-
-    let c = replayData[replayData.length - 1];
-
-    let entry = c.close;
-    let sl = c.high;
-    let risk = sl - entry;
-    let tp = entry - risk * 3;
-
-    currentTrade = { type: "SELL", entry, sl, tp };
-
-    drawTradeLines(entry, sl, tp);
-}
-
-// Check Trade
-function checkTrade(c) {
-    if (!currentTrade) return;
-
-    if (currentTrade.type === "BUY") {
-        if (c.low <= currentTrade.sl) closeTrade(-1);
-        else if (c.high >= currentTrade.tp) closeTrade(1);
+    for (let i = 0; i < data.length; i++) {
+      ema = data[i].close * k + ema * (1 - k);
+      emaArray.push({ time: data[i].time, value: ema });
     }
 
-    if (currentTrade.type === "SELL") {
-        if (c.high >= currentTrade.sl) closeTrade(-1);
-        else if (c.low <= currentTrade.tp) closeTrade(1);
+    return emaArray;
+  }
+
+  function loadChart() {
+    const data = generateMockData();
+    candleSeries.setData(data);
+
+    const emaData = calculateEMA(data);
+    emaSeries.setData(emaData);
+  }
+
+  function setSymbol(symbol) {
+    currentSymbol = symbol;
+    loadChart();
+  }
+
+  function setTimeframe(tf) {
+    currentTimeframe = tf;
+    loadChart();
+  }
+
+  function enableCrosshair() {
+    chart.applyOptions({
+      crosshair: { mode: 1 }
+    });
+  }
+
+  let drawing = false;
+  let trendlinePoints = [];
+  let trendlineSeries = null;
+
+  function startTrendline() {
+    drawing = true;
+    trendlinePoints = [];
+    alert('Click two points on chart to draw a trendline');
+  }
+
+  chart.subscribeClick(param => {
+    if (!drawing || !param.time || !param.point) return;
+
+    trendlinePoints.push({ time: param.time, value: param.seriesPrices.get(candleSeries) });
+
+    if (trendlinePoints.length === 2) {
+      drawing = false;
+
+      if (trendlineSeries) {
+        chart.removeSeries(trendlineSeries);
+      }
+
+      trendlineSeries = chart.addLineSeries();
+      trendlineSeries.setData([
+        trendlinePoints[0],
+        trendlinePoints[1]
+      ]);
     }
-}
+  });
 
-// Close Trade
-function closeTrade(result) {
-    if (result === 1) balance += 30;
-    else balance -= 10;
+  loadChart();
 
-    document.getElementById("balance").innerText = "Balance: $" + balance;
-
-    removeLines();
-    currentTrade = null;
-}
-
-// Init
-window.onload = function () {
-    initChart();
-    allData = generateData(1900);
-    startReplay();
-};
-
-window.addEventListener('resize', function () {
-    chart.resize(
-        document.getElementById('tv_chart').clientWidth,
-        document.getElementById('tv_chart').clientHeight
-    );
-});
-</script>
-
-</body>
+  window.addEventListener('resize', () => {
+    chart.applyOptions({
+      width: window.innerWidth,
+      height: window.innerHeight - 80
+    });
+  });
+</script></body>
 </html>
