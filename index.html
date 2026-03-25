@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elite Trading View</title>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #0b1017;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f1a24;
+    border-bottom: 1px solid #2a3f54;
+}
+
+.logo {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffb347;
+}
+
+.pair-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.pair-btn {
+    background: #16222e;
+    border: 1px solid #3a5670;
+    border-radius: 30px;
+    padding: 6px 16px;
+    color: white;
+    cursor: pointer;
+}
+
+.pair-btn.active {
+    background: #1f364d;
+    border-color: #ffb347;
+    color: #ffd966;
+}
+
+/* Chart */
+.chart-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+}
+
+#tv_chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* Replay Controls */
+.replay-controls {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    display: flex;
+    gap: 5px;
+    z-index: 999;
+}
+
+.replay-controls button {
+    background: #16222e;
+    border: 1px solid #3a5670;
+    color: #ffd966;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+<div class="header">
+    <div class="logo">📊 ELITE TV</div>
+    <div class="pair-selector">
+        <div class="pair-btn active" id="btn-xau" onclick="switchPair('XAUUSD')">XAUUSD</div>
+        <div class="pair-btn" id="btn-btc" onclick="switchPair('BTCUSD')">BTCUSD</div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="chart-container">
+
+    <!-- Replay Controls -->
+    <div class="replay-controls">
+        <button onclick="startReplay()">⏪</button>
+        <button onclick="playReplay()">▶️</button>
+        <button onclick="pauseReplay()">⏸</button>
+        <button onclick="stepReplay()">⏭</button>
+    </div>
+
+    <div id="tv_chart"></div>
+</div>
+
+<!-- Chart Library -->
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>
+let chart, candleSeries;
+let allData = [];
+let replayData = [];
+let replayIndex = 0;
+let isPlaying = false;
+let speed = 400;
+
+// Create Chart
+function initChart() {
+    const container = document.getElementById('tv_chart');
+
+    chart = LightweightCharts.createChart(container, {
+        layout: {
+            background: { color: '#0f1a24' },
+            textColor: '#d1d4dc',
+        },
+        grid: {
+            vertLines: { color: '#1f364d' },
+            horzLines: { color: '#1f364d' },
+        },
+        width: container.clientWidth,
+        height: container.clientHeight,
+    });
+
+    candleSeries = chart.addCandlestickSeries();
+}
+
+// Generate Fake Data (replace later with real market data)
+function generateData(basePrice) {
+    let data = [];
+    let time = 1700000000;
+    let price = basePrice;
+
+    for (let i = 0; i < 500; i++) {
+        let open = price;
+        let close = open + (Math.random() - 0.5) * 10;
+        let high = Math.max(open, close) + Math.random() * 5;
+        let low = Math.min(open, close) - Math.random() * 5;
+
+        data.push({
+            time: time,
+            open,
+            high,
+            low,
+            close
+        });
+
+        price = close;
+        time += 60;
+    }
+
+    return data;
+}
+
+// Replay Controls
+function startReplay() {
+    replayIndex = 0;
+    replayData = [];
+    isPlaying = false;
+    candleSeries.setData([]);
+}
+
+function playReplay() {
+    isPlaying = true;
+    runReplay();
+}
+
+function pauseReplay() {
+    isPlaying = false;
+}
+
+function stepReplay() {
+    if (replayIndex < allData.length) {
+        replayData.push(allData[replayIndex]);
+        candleSeries.setData(replayData);
+        replayIndex++;
+    }
+}
+
+function runReplay() {
+    if (!isPlaying) return;
+
+    stepReplay();
+    setTimeout(runReplay, speed);
+}
+
+// Switch Pair
+function switchPair(pair) {
+    document.getElementById('btn-xau').classList.remove('active');
+    document.getElementById('btn-btc').classList.remove('active');
+
+    document.getElementById(pair === 'XAUUSD' ? 'btn-xau' : 'btn-btc').classList.add('active');
+
+    let basePrice = pair === 'XAUUSD' ? 1900 : 30000;
+    allData = generateData(basePrice);
+
+    startReplay();
+}
+
+// Init
+window.onload = function () {
+    initChart();
+    allData = generateData(1900);
+    startReplay();
+};
+
+// Resize Fix
+window.addEventListener('resize', function () {
+    chart.resize(
+        document.getElementById('tv_chart').clientWidth,
+        document.getElementById('tv_chart').clientHeight
+    );
+});
+</script>
+
+</body>
+</html>
